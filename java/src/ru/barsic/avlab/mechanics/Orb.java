@@ -22,6 +22,11 @@ public class Orb extends PhysObject implements ISuspend {
 		return new int[][]{((OrbPainter)painter).xSuspArr, ((OrbPainter)painter).ySuspArr};
 	}
 
+	@Override
+	public void setSuspendPos(int x, int y) {
+		getPainter().setPos(getPainter().getX(),y + painter.getSize().width + painter.getSize().width / 12);
+	}
+
 	private  class OrbPainter extends Painter{
 		private int x;
 		private  int y;
@@ -36,6 +41,11 @@ public class Orb extends PhysObject implements ISuspend {
 
 		}
 		@Override
+		public boolean isChoice(int x, int y) {
+			return x > pos.x - size.width && y > pos.y - size.width && x < pos.x + size.width && y < pos.y + size.width;
+		}
+
+		@Override
 		public void updatePoints() {
 			x = pos.x;
 			y = pos.y;
@@ -47,7 +57,6 @@ public class Orb extends PhysObject implements ISuspend {
 		public void changePosition(int dx, int dy) {
 			x += dx;
 			y += dy;
-
 			for (int i = 0; i < 4; i++) {
 				xSuspArr[i] += dx;
 				ySuspArr[i] += dy;
@@ -69,7 +78,8 @@ public class Orb extends PhysObject implements ISuspend {
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setStrokeWidth(2);
 			canvas.drawPath(path, paint);
-			canvas.drawCircle(p.x,p.y,size.width / 30, paint);
+			//canvas.drawCircle(p.x, p.y, size.width / 30, paint);
+			//canvas.drawRect(xSuspArr[0], ySuspArr[0],xSuspArr[1],ySuspArr[2], paint);
 
 		}
 		@Override

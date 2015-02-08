@@ -24,6 +24,11 @@ public class Cube extends PhysObject implements ISuspend {
 		return new int[][]{((CubePainter)painter).xSuspArr, ((CubePainter)painter).ySuspArr};
 	}
 
+	@Override
+	public void setSuspendPos(int x, int y) {
+		getPainter().setPos(getPainter().getX(), y + painter.getSize().width / 4 + painter.getSize().width / 12 );
+	}
+
 	private class CubePainter extends Painter {
 		private int[] xArray;
 		private int[] yArray;
@@ -46,7 +51,7 @@ public class Cube extends PhysObject implements ISuspend {
 			xArray = new int[]{pos.x, pos.x + size.width, pos.x + size.width, pos.x, pos.x + size.width / 3, pos.x + size.width / 3 + size.width, pos.x + size.width / 3 + size.width };
 			yArray= new int[]{pos.y, pos.y, pos.y + size.height, pos.y + size.height, pos.y - size.width / 4, pos.y - size.width / 4, pos.y + size.height - size.width / 4};
 
-			xSuspArr = new int[]{xArray[0] + size.width / 2 + size.width / 3 - size.width / 7, xArray[0] + size.width / 2 + size.width / 3, xArray[0] + size.width / 2 + size.width / 3, xArray[0] + size.width / 2 + size.width / 3 - size.width / 7};
+			xSuspArr = new int[]{xArray[0] + size.width / 2 +  size.width / 8  , xArray[0] + size.width / 2 + size.width / 3, xArray[0] + size.width / 2 + size.width / 3, xArray[0] + size.width / 2 + size.width / 8 };
 			ySuspArr = new int[]{pos.y - size.width / 8 - size.width / 3, pos.y - size.width / 8 - size.width / 3, pos.y - size.width / 8, pos.y - size.width / 8};
 		}
 
@@ -104,14 +109,15 @@ public class Cube extends PhysObject implements ISuspend {
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setStrokeWidth(2);
 			canvas.drawPath(path, paint);
-			canvas.drawCircle(p.x,p.y,size.width / 30, paint);
+			//canvas.drawCircle(p.x, p.y, size.width / 30, paint);
+			//canvas.drawRect(xSuspArr[0], ySuspArr[0], xSuspArr[1], ySuspArr[2], paint);
 		}
 
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
 			super.onTouch(v, event);
 			if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-				if (getParent() == null)
+				if (getParent() == null )
 					moveToDefault();
 			}
 			return true;

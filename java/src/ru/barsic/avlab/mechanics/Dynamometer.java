@@ -9,22 +9,23 @@ import android.view.MotionEvent;
 import android.view.View;
 import ru.barsic.avlab.basic.*;
 import ru.barsic.avlab.graphics.*;
+import ru.barsic.avlab.helper.ScalingUtil;
 import ru.barsic.avlab.physics.*;
 
 public class Dynamometer extends PhysObject implements IGluer, IParent {
 
 	double force = 0;
-	double maxForce = 2.5;
-	double minForce = -2.5;
-	double step = (maxForce + minForce) / 60;
-	double alpha = Math.PI / 8;
-	double k = 200.0;
-	TimerTask calculationTask;
+	double maxForce = 20;
+	double minForce = -20;
+	//double step = (maxForce + minForce) / 60;
+	double alpha = Math.PI / 9;
+	double k = 114d;
+	public static double c = 10d;
+
 
 	public Dynamometer(double x, double y, double width, double height) {
 		super(x, y, width, height, 0);
 		painter = new DynamometerPathPainter(this);
-		calculationTask = new CalculationTask((DynamometerPathPainter)painter);
 	}
 
 	@Override
@@ -47,6 +48,7 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 
 		Scale lineScale;
 
+
 		private int[] xArray, yArray;
 		private int[] xSuspArr, ySuspArr;
 		private final double edgeLength = size.width / 2;
@@ -68,18 +70,24 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 		private int calcMarkForce() {
 			int y1 = lineScale.getY();
 			int y2 = lineScale.getY() + lineScale.getSize().height;
+			//System.out.println("y1="+lineScale.getSize().height);
+			//System.out.println("y2="+y2);
 			return (int)((y1 * (force - minForce) + y2 * (maxForce - force)) / (maxForce - minForce));
+
 		}
 
-		@Override
+
+
+			@Override
 		public void updatePoints() {
 			xArray = new int[] {pos.x, pos.x + size.width, pos.x + size.width, pos.x, pos.x + size.width / 2};
 			yArray = new int[] {pos.y, pos.y, pos.y + size.height, pos.y + size.height, calcMarkForce()};
-			xSuspArr = new int[] {xArray[4] - size.width / 10, xArray[4], xArray[4] + size.width / 10, xArray[4] - size.width / 10};
-			ySuspArr = new int[] {yArray[2] + size.height / 3, yArray[2] + size.height / 3, yArray[2] + size.height / 3 + size.height / 5, yArray[2] + size.height / 3 + size.height / 5  };
+			xSuspArr = new int[] {xArray[4] - size.width / 8,  xArray[4] + size.width / 8, xArray[4] + size.width / 8, xArray[4] - size.width / 8};
+			ySuspArr = new int[] {calcMarkForce() + 3*size.height / 4 + size.width / 5, calcMarkForce() + 3*size.height / 4 + size.width / 5,calcMarkForce() + 3*size.height / 4 + 3*size.width / 5, calcMarkForce() + 3*size.height / 4 + 3*size.width / 5  };
 
 			lineScale.setPos(pos.x + size.width / 9, pos.y + size.height / 7);
 			lineScale.setSize(size.width / 4, size.height - size.height / 6);
+
 		}
 
 		@Override
@@ -107,22 +115,17 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 
 			paint.setColor(Color.GRAY);
 			canvas.drawCircle(xArray[4], yArray[0] + size.width / 15, size.width / 15, paint);
-			//canvas.drawPoint(xArray[4], yArray[0], paint);
 
 			drawSpring(canvas, path, paint);
 
-			paint.setColor(Color.RED);
-			canvas.drawLine(xArray[0], yArray[0]  + 16*size.height / 30, xArray[1],yArray[0]  + 16*size.height / 30, paint);
-			paint.setColor(Color.GRAY);
-			canvas.drawLine(xArray[4], yArray[0]  + 16*size.height / 30, xArray[4], yArray[2] + size.height / 3, paint );
-			Point p = new Point(xArray[4] - size.width / 10, yArray[2] + size.height / 3 + size.width / 5 );
-			path.reset();
-			path.moveTo(xArray[4], yArray[2] + size.height / 3);
-			path.quadTo(p.x, p.y, xArray[4] + size.width / 10, yArray[2] + size.height / 3 + size.width / 12);
-			paint.setColor(Color.rgb(47, 79, 79));
-			//paint.setStrokeWidth(2);
-			canvas.drawPath(path, paint);
-			canvas.drawCircle(p.x,p.y, (float)1, paint);
+//			Point p = new Point(xArray[4] - size.width / 10, calcMarkForce() + 3*size.height / 4 + size.width / 5 );
+//			path.reset();
+//			path.moveTo(xArray[4], calcMarkForce() + 3*size.height / 4);
+//			path.quadTo(p.x, p.y, xArray[4] + size.width / 10, calcMarkForce() + 3*size.height / 4 + size.width / 12);
+//			paint.setColor(Color.rgb(47, 79, 79));
+//			canvas.drawPath(path, paint);
+			//canvas.drawCircle(p.x, p.y, (float)1, paint);
+			//canvas.drawRect(xSuspArr[0], ySuspArr[0],xSuspArr[1],ySuspArr[2], paint);
 			lineScale.onDraw(canvas);
 		}
 
@@ -147,50 +150,99 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 			}
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setStrokeWidth(2);
-
 			canvas.drawPath(path, paint);
+
+			paint.setColor(Color.RED);
+			canvas.drawLine(xArray[0], yArray[0] + size.width / 30 + edgeCount*edgeY + edgeY/2, xArray[1], yArray[0] + size.width / 30 + edgeCount*edgeY + edgeY/2, paint);
+			paint.setColor(Color.GRAY);
+			canvas.drawLine(xArray[4],  yArray[0] + size.width / 30 + edgeCount*edgeY + edgeY/2, xArray[4], yArray[0] + size.width / 30 + edgeCount*edgeY + 3*size.height / 4 + edgeY/2, paint);
+
+			Point p = new Point(xArray[4] - size.width / 10, (int)(yArray[0] + size.width / 30 + edgeCount*edgeY + 3*size.height / 4 + edgeY/2 + size.width / 5));
+			path.reset();
+			path.moveTo(xArray[4], yArray[0] + size.width / 30 + edgeCount*edgeY + 3*size.height / 4 + edgeY/2);
+			path.quadTo(p.x, p.y, xArray[4] + size.width / 10,yArray[0] + size.width / 30 + edgeCount*edgeY + 3*size.height / 4 + edgeY/2 + size.width / 12);
+			paint.setColor(Color.rgb(47, 79, 79));
+			canvas.drawPath(path, paint);
+			if (!getChildren().isEmpty())
+				((ISuspend)getChildren().get(0)).setSuspendPos(0, (int)(yArray[0] + size.width / 30 + edgeCount*edgeY + 3*size.height / 4 + edgeY/2 + size.width / 12));
 		}
 	}
 
-	private class CalculationTask extends TimerTask {
+	private static class CalculationTask extends TimerTask {
+
+		private  final Dynamometer dynamometer;
 
 		private final DynamometerPathPainter painter;
-		private volatile boolean condition = true;
+		private static double y0;
+		private static double m;
+		private static double fundFreq;
+		private static double ksi;
+		private static double freq;
+		private static double lengthAllEdges;
 
-		public CalculationTask(DynamometerPathPainter painter) {
+		public CalculationTask(DynamometerPathPainter painter, Dynamometer dynamometer) {
 			this.painter = painter;
+			this.dynamometer = dynamometer;
+			lengthAllEdges = (painter.edgeCount + 0.5) * painter.edgeLength;
 		}
 
 		@Override
 		public void run() {
-			double currentLength = (painter.edgeCount + 0.5) * Math.sin(alpha) * painter.edgeLength;
-			double dy = -(currentLength - painter.initialSpringLengthY) / 1;
-			double dy1 = dy;
-			double dy2 = dy;
-			double a;
-			double dt = World.D_T;
-			while(condition) {
-				a = k / getChildren().get(0).mass * (-dy) + World.ACCELERATION_OF_GRAVITY;
-				dy = a * dt * dt + 2 * dy1 + dy2;
-				dy1 = dy;
-				dy2 = dy1;
-				currentLength += (dy *1);
-				alpha = Math.asin(currentLength / painter.edgeLength / (painter.edgeCount + 0.5));
+			PhysObject child = null;
+			if (!dynamometer.getChildren().isEmpty()) {
+				child = dynamometer.getChildren().get(0);
+				m = child.mass;
+				fundFreq = Math.sqrt(dynamometer.k / m);
+				ksi = c / (2d * Math.sqrt(dynamometer.k * m));
+				freq = fundFreq * Math.sqrt(1d - ksi * ksi);
+				y0 = m * World.ACCELERATION_OF_GRAVITY / dynamometer.k;
+			}
+			double t = 0d;
+			double dy = 0;
+			double currentLength;
+			long currentTime = System.currentTimeMillis();
+			while (dy > 0.0001 || (System.currentTimeMillis() - currentTime) < 1500) {
+				double cos = Math.cos(freq * t);
+				double sin = Math.sin(freq * t);
+				double c2 = y0 * ksi * fundFreq / freq;
+				dy =  Math.exp(-ksi * fundFreq * t) * (y0 * cos + c2 * sin);
+				if (child != null)
+					currentLength =  Math.sin(dynamometer.alpha) * lengthAllEdges + ScalingUtil.scalingRealSizeY(dy);
+				else
+					currentLength =  Math.sin(dynamometer.alpha) * lengthAllEdges - ScalingUtil.scalingRealSizeY(dy);
+				dynamometer.alpha = Math.asin(currentLength / lengthAllEdges);
+
+				t += 0.01;
+
+					//child.setPos(child.x + child.getPainter().getSize().width / 20, child.y + painter.edgeLength*Math.sin(dynamometer.alpha)*painter.edgeCount);
+
+
 				try {
-					Thread.sleep((long)(1000*dt));
+					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
+
 	}
 
 	@Override
 	public boolean attach(PhysObject child) {
-		if (child instanceof ISuspend && getChildren().isEmpty() && super.attach(child)) {
-			child.getPainter().setPos(child.getPainter().getPos().x - (child.getPainter().getSize().width) / 20, child.getPainter().getPos().y );
-			DrawView.timer.schedule( calculationTask , new Date(System.currentTimeMillis()));
+		if (child instanceof ISuspend && getChildren().isEmpty()  && ((DynamometerPathPainter)painter).object.getParent() != null &&  super.attach(child)) {
+
+				DrawView.timer.schedule(new CalculationTask((DynamometerPathPainter)painter, this), new Date(System.currentTimeMillis()));
 			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean detach (PhysObject child) {
+		if (!getChildren().isEmpty()) {
+			child.getPainter().moveToDefault();
+			DrawView.timer.schedule(new CalculationTask((DynamometerPathPainter)painter, this), new Date(System.currentTimeMillis()));
+			return super.detach(child);
 		}
 		return false;
 	}

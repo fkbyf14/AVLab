@@ -1,16 +1,27 @@
-import ru.barsic.avlab.physics.Computation;
+import android.app.Application;
 
-public class ComputationTest  {
+public class ComputationTest  extends Application {
+	public static double c = 20d;
+	public static double m = 2d;
+	public static double k = 120d;
+
 
 	public static void main(String[] args) {
-		testIntersectTest();
+		for (double t = 0d; t < 2d; t+=0.01) {
+			System.out.println(functionX(t , 2d));
+
+		}
+
 	}
-	public static void testIntersectTest() {
-		int[] x1 = new int []{10, 20, 20, 10};
-		int[] y1 = new int []{5, 5, 15, 15};
-		int[] x2 = new int []{5, 15, 15, 5};
-		int[] y2 = new int []{10, 10, 20, 20};
-		System.out.println(Computation.intersect(new int[][]{x1, y1}, new int[][]{x2, y2}));
+	public static double functionX(double t, double x0) {
+		double fundFreq = Math.sqrt(k / m);
+		double ksi = c / (2d*Math.sqrt(k*m));
+		double freq = fundFreq*Math.sqrt(1d - ksi*ksi);
+		double cos = Math.cos(freq * t);
+		double sin = Math.sin(freq * t);
+		double c2 = x0*(ksi*fundFreq* cos + freq* sin) / (freq* cos - ksi*fundFreq* sin);
+		return Math.exp(-ksi*fundFreq*t)*(x0* cos + c2* sin);
+
 	}
 
 }

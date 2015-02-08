@@ -45,8 +45,6 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 	//======================== public static methods ========================
 
 	public static DrawView createInstance(Context context) {
-		if (drawViewInstance != null)
-			return drawViewInstance;
 		drawViewInstance = new DrawView(context);
 
 		return drawViewInstance;
@@ -125,6 +123,8 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 		DisplayMetrics displaymetrics = getResources().getDisplayMetrics();
 		ScalingUtil.pixToSmX = displaymetrics.xdpi / ScalingUtil.INCH_TO_SM;
 		ScalingUtil.pixToSmY = displaymetrics.ydpi / ScalingUtil.INCH_TO_SM;
+		World.deviceHeightSm = displaymetrics.heightPixels / ScalingUtil.pixToSmY;
+		World.deviceWidthSm = displaymetrics.widthPixels / ScalingUtil.pixToSmX;
 		this.touchListener = new TouchListener(displaymetrics.heightPixels, displaymetrics.widthPixels);
 		//this.setBackgroundColor(Color.WHITE);
 		this.setOnTouchListener(touchListener);
@@ -159,7 +159,18 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 					Paint paint = new Paint();
 					paint.setColor(Color.BLACK);
 					paint.setStyle(Paint.Style.STROKE);
-					canvas.drawRect(3 , 3, touchListener.screenWidth - 3, touchListener.screenHeight - 3, paint);
+					//canvas.drawRect(3, 3, ScalingUtil.getWorldWidthInPix() - 3, ScalingUtil.getWorldHeightInPix() - 3, paint);
+					double[] intersect = intersectScreenAndWorldBounds();
+					if (intersect != null) {
+						if (intersect[0] == intersect[2] || intersect[1] == intersect[3]) {
+							canvas.drawLine((float)intersect[0], (float)intersect[1], (float)intersect[2], (float)intersect[3], paint);
+						} else {
+							canvas.drawLine((float)intersect[0],(float)intersect[1], (float)intersect[0], (float)intersect[3], paint);
+							canvas.drawLine((float)intersect[0],(float)intersect[3], (float)intersect[2], (float)intersect[3], paint);
+						}
+					}
+
+					//canvas.drawRect(3 , 3, touchListener.screenWidth - 3, touchListener.screenHeight - 3, paint);
 					for (Painter painter : painters)
 						painter.onDraw(canvas);
 				} finally {
@@ -174,4 +185,72 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 			}
 		}
 	}
+
+	private double[] intersectScreenAndWorldBounds() {
+		double deviceBRX = World.deviceX + World.deviceWidthSm;
+		double deviceBRY = World.deviceY + World.deviceHeightSm;
+		double[] result;
+		result = intersectVerticalBounds(deviceBRX, deviceBRY, 0);
+		if (result != null)
+			return result;
+		System.out.println(" * 1 * ");
+		result = intersectVerticalBounds(deviceBRX, deviceBRY, World.WORLD_WIDTH);
+		if (result != null)
+			return result;
+		System.out.println(" * 2 * ");
+		result = intersectHorizontalBounds(deviceBRX, deviceBRY, 0);
+		System.out.println("****** " + Arrays.toString(result));
+		if (result != null)
+			return result;
+		System.out.println(" * 3 * ");
+		return intersectHorizontalBounds(deviceBRX, deviceBRY, World.WORLD_HEIGHT);
+	}
+
+	private double[] intersectVerticalBounds(double deviceBRX, double deviceBRY, double verticalBoundX) {
+		double intersectX1 = 0;
+		double intersectY1 = 0;
+		double intersectY2 = 0;
+		double intersectX2 = 0;
+		if ((World.deviceX < verticalBoundX && deviceBRX > verticalBoundX) && (deviceBRY > 0 && World.deviceY < World.WORLD_HEIGHT)) {
+			intersectX1 = World.deviceWidthSm - (deviceBRX - verticalBoundX);
+
+			if (World.deviceY >= 0 && deviceBRY <= World.WORLD_HEIGHT) {
+				intersectY1 = 0;
+				intersectX2 = intersectX1;
+				intersectY2 = World.deviceHeightSm;
+				System.out.println("0 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+
+			} else if (World.deviceY > 0 && deviceBRY > World.WORLD_HEIGHT) {
+				intersectY1 = 0;
+				intersectY2 = World.deviceHeightSm - (deviceBRY - World.WORLD_HEIGHT);
+				//intersectX1 = World.deviceWidthSm - deviceBRX;
+				intersectX2 = verticalBoundX == 0 ? World.deviceWidthSm : 0;
+				System.out.println("1 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+			} else {
+				intersectY1 = World.deviceHeightSm;
+				intersectY2 = World.deviceHeightSm - deviceBRY;
+				intersectX2 = verticalBoundX == 0 ? World.deviceWidthSm : 0;
+				System.out.println("2 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+
+			}
+			return new double[]{ScalingUtil.scalingRealSizeX(intersectX1),ScalingUtil.scalingRealSizeY(intersectY1),ScalingUtil.scalingRealSizeX(intersectX2), ScalingUtil.scalingRealSizeY(intersectY2)};
+		}
+		return null;
+	}
+	private double[] intersectHorizontalBounds(double deviceBRX, double deviceBRY, double horizontalBoundY){
+		double intersectX1 = 0;
+		double intersectY1 = 0;
+		double intersectY2 = 0;
+		double intersectX2 = 0;
+		if ((World.deviceX > 0 && deviceBRX < World.WORLD_WIDTH) && (World.deviceY < horizontalBoundY && deviceBRY > horizontalBoundY))  {
+			intersectY1 = World.deviceHeightSm - (deviceBRY - horizontalBoundY);
+			intersectY2 = intersectY1;
+			intersectX1 = 0;
+			intersectX2 = World.deviceWidthSm;
+
+		return new double[]{ScalingUtil.scalingRealSizeX(intersectX1),ScalingUtil.scalingRealSizeY(intersectY1),ScalingUtil.scalingRealSizeX(intersectX2), ScalingUtil.scalingRealSizeY(intersectY2)};
+	}
+		return  null;
+	}
+
 }

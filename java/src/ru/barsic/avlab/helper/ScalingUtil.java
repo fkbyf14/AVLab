@@ -1,13 +1,13 @@
 package ru.barsic.avlab.helper;
 
+import ru.barsic.avlab.basic.World;
 import ru.barsic.avlab.graphics.DrawView;
 import ru.barsic.avlab.graphics.Painter;
 
 public class ScalingUtil {
-	//сантимеров в дюйме
 
-	public static final double WORLD_WIDTH = 70;
-	public static final double WORLD_HEIGHT = 21;
+
+	//сантимеров в дюйме
 	public static final double INCH_TO_SM = 2.54;
 	public static double pixToSmX;
 	public static double pixToSmY;
@@ -30,7 +30,12 @@ public class ScalingUtil {
 			}
 		}
 	}
-
+	public static float getWorldWidthInPix(){
+		return (float)Math.round(World.WORLD_WIDTH * globalScaleFactor * pixToSmX);
+	}
+	public static float getWorldHeightInPix(){
+		return (float)Math.round(World.WORLD_HEIGHT * globalScaleFactor * pixToSmY);
+	}
 	public static double getGlobalScaleFactor() {
 		return globalScaleFactor;
 	}
