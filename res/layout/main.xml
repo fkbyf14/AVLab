@@ -15,9 +15,9 @@
 			android:text="Start lab"
 			android:id="@+id/start" android:layout_gravity="center_horizontal"/>
 	<Button
-			android:layout_width="wrap_content"
+			android:layout_width="131dp"
 			android:layout_height="wrap_content"
-			android:text="Confuguration lab"
+			android:text="Configure lab"
 			android:id="@+id/configuration" android:layout_gravity="center_horizontal"/>
 	<Button
 			android:layout_width="134dp"

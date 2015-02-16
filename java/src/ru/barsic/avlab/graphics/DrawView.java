@@ -16,12 +16,11 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 
 	//======================== public static fields ========================
 
-	public static Point position = new Point(0, 0);
 	public static int width;
 	public static int height;
 	public static int maxZIndex = 100000;
 	public static int currentZIndex = 0;
-	public static ArrayList<Painter> painters = new ArrayList<>();
+	public static List<Painter> painters = new ArrayList<>();
 	public static Timer timer = new Timer("calculation timer");
 
 	//======================== private static fields ========================
@@ -30,12 +29,6 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private static DrawView drawViewInstance;
 
-	private static final Comparator<Painter> Z_COMPARATOR = new Comparator<Painter>() {
-		@Override
-		public int compare(Painter v1, Painter v2) {
-			return v1.getZIndex() < v2.getZIndex() ? -1 : 1;
-		}
-	};
 
 	//======================== private instance fields ========================
 
@@ -43,6 +36,8 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 	final TouchListener touchListener;
 
 	//======================== public static methods ========================
+
+
 
 	public static DrawView createInstance(Context context) {
 		drawViewInstance = new DrawView(context);
@@ -56,31 +51,15 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 		return drawViewInstance;
 	}
 
-	public static void sortByZ() {
-		Collections.sort(painters, Z_COMPARATOR);
-	}
-
-	public static void returnPrimaryPosition() {
-		for (Painter vi : painters) {
-			if (vi.getHolder() == null) {
-				vi.moveBy(-position.x, -position.y);
-			}
-		}
-		position.x = 0;
-		position.y = 0;
-	}
-
 	public static void moveVisibleArea(int dx, int dy) {
-		position.x += dx;
-		position.y += dy;
-		World.deviceY -= dy / ScalingUtil.pixToSmY;
-		World.deviceX -= dx / ScalingUtil.pixToSmX;
+		World.deviceY -= dy / ScalingUtil.getPixToSmY();
+		World.deviceX -= dx / ScalingUtil.getPixToSmX();
 		System.out.println("WORLD x:" + World.deviceX + ", y:" + World.deviceY);
-		for (Painter vi : painters) {
-			if (vi.getHolder() == null) {
-				vi.moveBy(dx, dy);
+			for (Painter vi : painters) {
+				if (vi.getHolder() == null) {
+					vi.moveBy(dx, dy);
+				}
 			}
-		}
 	}
 
 	//======================== public instance methods  ========================
@@ -121,14 +100,15 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 		super(context);
 		getHolder().addCallback(this);
 		DisplayMetrics displaymetrics = getResources().getDisplayMetrics();
-		ScalingUtil.pixToSmX = displaymetrics.xdpi / ScalingUtil.INCH_TO_SM;
-		ScalingUtil.pixToSmY = displaymetrics.ydpi / ScalingUtil.INCH_TO_SM;
-		World.deviceHeightSm = displaymetrics.heightPixels / ScalingUtil.pixToSmY;
-		World.deviceWidthSm = displaymetrics.widthPixels / ScalingUtil.pixToSmX;
+		ScalingUtil.setPixToSmX(displaymetrics.xdpi / ScalingUtil.INCH_TO_SM);
+		ScalingUtil.setPixToSmY(displaymetrics.ydpi / ScalingUtil.INCH_TO_SM);
+		World.setDeviceHeightSm(displaymetrics.heightPixels / ScalingUtil.getPixToSmY());
+		World.setDeviceWidthSm(displaymetrics.widthPixels / ScalingUtil.getPixToSmX());
 		this.touchListener = new TouchListener(displaymetrics.heightPixels, displaymetrics.widthPixels);
 		//this.setBackgroundColor(Color.WHITE);
 		this.setOnTouchListener(touchListener);
 	}
+
 
 	//======================== DrawThread ========================
 
@@ -171,8 +151,10 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 					}
 
 					//canvas.drawRect(3 , 3, touchListener.screenWidth - 3, touchListener.screenHeight - 3, paint);
-					for (Painter painter : painters)
-						painter.onDraw(canvas);
+
+						for (Painter painter : painters)
+							painter.onDraw(canvas);
+
 				} finally {
 					if (canvas != null)
 						surfaceHolder.unlockCanvasAndPost(canvas);
@@ -187,22 +169,18 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	private double[] intersectScreenAndWorldBounds() {
-		double deviceBRX = World.deviceX + World.deviceWidthSm;
-		double deviceBRY = World.deviceY + World.deviceHeightSm;
+		double deviceBRX = World.deviceX + World.getDeviceWidthSm();
+		double deviceBRY = World.deviceY + World.getDeviceHeightSm();
 		double[] result;
 		result = intersectVerticalBounds(deviceBRX, deviceBRY, 0);
 		if (result != null)
 			return result;
-		System.out.println(" * 1 * ");
 		result = intersectVerticalBounds(deviceBRX, deviceBRY, World.WORLD_WIDTH);
 		if (result != null)
 			return result;
-		System.out.println(" * 2 * ");
 		result = intersectHorizontalBounds(deviceBRX, deviceBRY, 0);
-		System.out.println("****** " + Arrays.toString(result));
 		if (result != null)
 			return result;
-		System.out.println(" * 3 * ");
 		return intersectHorizontalBounds(deviceBRX, deviceBRY, World.WORLD_HEIGHT);
 	}
 
@@ -212,25 +190,22 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 		double intersectY2 = 0;
 		double intersectX2 = 0;
 		if ((World.deviceX < verticalBoundX && deviceBRX > verticalBoundX) && (deviceBRY > 0 && World.deviceY < World.WORLD_HEIGHT)) {
-			intersectX1 = World.deviceWidthSm - (deviceBRX - verticalBoundX);
+			intersectX1 = World.getDeviceWidthSm() - (deviceBRX - verticalBoundX);
 
 			if (World.deviceY >= 0 && deviceBRY <= World.WORLD_HEIGHT) {
 				intersectY1 = 0;
 				intersectX2 = intersectX1;
-				intersectY2 = World.deviceHeightSm;
-				System.out.println("0 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+				intersectY2 = World.getDeviceHeightSm();
 
 			} else if (World.deviceY > 0 && deviceBRY > World.WORLD_HEIGHT) {
 				intersectY1 = 0;
-				intersectY2 = World.deviceHeightSm - (deviceBRY - World.WORLD_HEIGHT);
+				intersectY2 = World.getDeviceHeightSm() - (deviceBRY - World.WORLD_HEIGHT);
 				//intersectX1 = World.deviceWidthSm - deviceBRX;
-				intersectX2 = verticalBoundX == 0 ? World.deviceWidthSm : 0;
-				System.out.println("1 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+				intersectX2 = verticalBoundX == 0 ? World.getDeviceWidthSm() : 0;
 			} else {
-				intersectY1 = World.deviceHeightSm;
-				intersectY2 = World.deviceHeightSm - deviceBRY;
-				intersectX2 = verticalBoundX == 0 ? World.deviceWidthSm : 0;
-				System.out.println("2 **** = " + intersectX1 + ", " + intersectY1 + ", " + intersectX2 + ", " + intersectY2);
+				intersectY1 = World.getDeviceHeightSm();
+				intersectY2 = World.getDeviceHeightSm() - deviceBRY;
+				intersectX2 = verticalBoundX == 0 ? World.getDeviceWidthSm() : 0;
 
 			}
 			return new double[]{ScalingUtil.scalingRealSizeX(intersectX1),ScalingUtil.scalingRealSizeY(intersectY1),ScalingUtil.scalingRealSizeX(intersectX2), ScalingUtil.scalingRealSizeY(intersectY2)};
@@ -243,10 +218,10 @@ public class DrawView extends SurfaceView implements SurfaceHolder.Callback {
 		double intersectY2 = 0;
 		double intersectX2 = 0;
 		if ((World.deviceX > 0 && deviceBRX < World.WORLD_WIDTH) && (World.deviceY < horizontalBoundY && deviceBRY > horizontalBoundY))  {
-			intersectY1 = World.deviceHeightSm - (deviceBRY - horizontalBoundY);
+			intersectY1 = World.getDeviceHeightSm() - (deviceBRY - horizontalBoundY);
 			intersectY2 = intersectY1;
 			intersectX1 = 0;
-			intersectX2 = World.deviceWidthSm;
+			intersectX2 = World.getDeviceWidthSm();
 
 		return new double[]{ScalingUtil.scalingRealSizeX(intersectX1),ScalingUtil.scalingRealSizeY(intersectY1),ScalingUtil.scalingRealSizeX(intersectX2), ScalingUtil.scalingRealSizeY(intersectY2)};
 	}

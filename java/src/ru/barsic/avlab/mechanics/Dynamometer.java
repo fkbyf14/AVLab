@@ -206,17 +206,14 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 				double sin = Math.sin(freq * t);
 				double c2 = y0 * ksi * fundFreq / freq;
 				dy =  Math.exp(-ksi * fundFreq * t) * (y0 * cos + c2 * sin);
+				System.out.println("CHILD!!! =  " + child);
 				if (child != null)
 					currentLength =  Math.sin(dynamometer.alpha) * lengthAllEdges + ScalingUtil.scalingRealSizeY(dy);
 				else
 					currentLength =  Math.sin(dynamometer.alpha) * lengthAllEdges - ScalingUtil.scalingRealSizeY(dy);
 				dynamometer.alpha = Math.asin(currentLength / lengthAllEdges);
-
 				t += 0.01;
-
-					//child.setPos(child.x + child.getPainter().getSize().width / 20, child.y + painter.edgeLength*Math.sin(dynamometer.alpha)*painter.edgeCount);
-
-
+				//child.setPos(child.x + child.getPainter().getSize().width / 20, child.y + painter.edgeLength*Math.sin(dynamometer.alpha)*painter.edgeCount);
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
@@ -230,8 +227,8 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 	@Override
 	public boolean attach(PhysObject child) {
 		if (child instanceof ISuspend && getChildren().isEmpty()  && ((DynamometerPathPainter)painter).object.getParent() != null &&  super.attach(child)) {
-
-				DrawView.timer.schedule(new CalculationTask((DynamometerPathPainter)painter, this), new Date(System.currentTimeMillis()));
+			DrawView.timer.schedule(new CalculationTask((DynamometerPathPainter)painter, this), new Date(System.currentTimeMillis()));
+			child.getPainter().setZIndex(painter.getZIndex() + 2);
 			return true;
 		}
 		return false;
@@ -240,9 +237,9 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 	@Override
 	public boolean detach (PhysObject child) {
 		if (!getChildren().isEmpty()) {
-			child.getPainter().moveToDefault();
+			boolean result = super.detach(child);
 			DrawView.timer.schedule(new CalculationTask((DynamometerPathPainter)painter, this), new Date(System.currentTimeMillis()));
-			return super.detach(child);
+			return result;
 		}
 		return false;
 	}

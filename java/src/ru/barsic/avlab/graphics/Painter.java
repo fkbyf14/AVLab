@@ -1,14 +1,14 @@
 package ru.barsic.avlab.graphics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
 import ru.barsic.avlab.basic.*;
-import ru.barsic.avlab.helper.Dimension;
-import ru.barsic.avlab.helper.ScalingUtil;
+import ru.barsic.avlab.helper.*;
 import ru.barsic.avlab.physics.IParent;
 import ru.barsic.avlab.physics.Scene;
 
@@ -19,7 +19,7 @@ import ru.barsic.avlab.physics.Scene;
  *
  *
  */
-public abstract class Painter implements View.OnTouchListener {
+public abstract class Painter implements View.OnTouchListener, Comparable<Painter> {
 
 
 
@@ -215,10 +215,14 @@ public abstract class Painter implements View.OnTouchListener {
 	}
 
 	public void setZIndex(int zIndex) {
-		int delta = zIndex - this.zIndex;
+		Logging.log("setZIndex",this,"old="+this.zIndex+", new = "+zIndex);
+//		this.zIndex = zIndex;
 		this.zIndex = zIndex;
-		for (Painter p : inside)
-			p.setZIndex(p.getZIndex() + delta);// или по какому другому алгоритму...
+
+		Collections.sort(DrawView.painters);
+
+		//for (Painter p : inside)
+		//	p.setZIndex(p.getZIndex() + delta);// или по какому другому алгоритму...
 	}
 
 	public int getX() {
@@ -272,6 +276,7 @@ public abstract class Painter implements View.OnTouchListener {
 
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN: // нажатие
+			Logging.log("ACTION_DOWN", this,"x = " + x + ", y = " + y);
 			if (object.getParent() != null) {
 				object.getParent().detach(object);
 			}
@@ -284,6 +289,7 @@ public abstract class Painter implements View.OnTouchListener {
 			}
 			break;
 		case MotionEvent.ACTION_UP: // отпускание
+			Logging.log("ACTION_UP", this,"x = " + x + ", y = " + y);
 		case MotionEvent.ACTION_CANCEL:
 
 			for (IParent parent : Scene.parents) {
@@ -297,14 +303,12 @@ public abstract class Painter implements View.OnTouchListener {
 		return true;
 	}
 
-	public Point getCenter() {
-		return center;
+	public int compareTo(Painter other) {
+		return zIndex - other.zIndex;
 	}
 
-	public void setCenter(Point center) {
-		if (this.center == null)
-			this.center = center;
-		else
-			moveBy(center.x - this.center.x, center.y - this.center.y);
+	@Override
+	public String toString() {
+		return "{" + object + "}";
 	}
 }

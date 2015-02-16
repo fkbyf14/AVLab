@@ -3,6 +3,8 @@ package ru.barsic.avlab.basic;
 import java.util.ArrayList;
 
 import ru.barsic.avlab.graphics.Painter;
+import ru.barsic.avlab.helper.Logging;
+import ru.barsic.avlab.helper.ScalingUtil;
 import ru.barsic.avlab.physics.Scene;
 
 //import org.apache.log4j.Logger;
@@ -61,6 +63,7 @@ public abstract class PhysObject {
 	 * False
 	 */
 	public boolean attach(PhysObject child) {
+		Logging.log("attach", this, "attach child = " + child);
 		if (child.equals(this))
 			return false;
 		children.add(child);
@@ -77,6 +80,7 @@ public abstract class PhysObject {
 	 * @return True если объект позволил отнять его ребенка
 	 */
 	public boolean detach(PhysObject child) {
+		Logging.log("detach", this, "detach child = " + child);
 		children.remove(child);
 		child.parent = null;
 		child.painter.setHolder(null);
@@ -91,10 +95,10 @@ public abstract class PhysObject {
 
 	@Override
 	public String toString() {
-		return "PhysObject={" + getClass().getSimpleName() + "," +
-			"position=(" + x + "," + y + ")," +
-			"parent=" + printParent() + "," +
-			"children=" + printChildren() +
+		return "{" + getClass().getSimpleName() + "," +
+			"position=(" + ScalingUtil.scalingRealSizeX(x) + "," + ScalingUtil.scalingRealSizeY(y) + ")," +
+			"par=" + printParent() + "," +
+			"kids=" + printChildren() +
 			"}";
 	}
 

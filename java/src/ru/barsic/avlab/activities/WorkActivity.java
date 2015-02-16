@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import ru.barsic.avlab.graphics.DrawView;
+import ru.barsic.avlab.helper.Logging;
 import ru.barsic.avlab.mechanics.*;
 import ru.barsic.avlab.molecular.Thermometer;
 import ru.barsic.avlab.physics.Scene;
@@ -19,8 +20,8 @@ public class WorkActivity extends Activity {
 
 			Support support = new Support(4.5, 0.5, 0.6, 7);
 			Orb orb1 = new Orb(10, 7, 1, 1, 1, Color.RED);
-			Orb orb2 = new Orb(12, 7, 0.8, 0.8, 0.5, Color.YELLOW);
 			Cube cube = new Cube(13.5, 6.5, 1.2, 1.2, 2, Color.rgb(192, 192, 192));
+			Orb orb2 = new Orb(12, 7, 0.8, 0.8, 0.5, Color.YELLOW);
 		}
 	}
 	@Override
@@ -36,6 +37,7 @@ public class WorkActivity extends Activity {
 	@Override
 	public void onPause() {
 		super.onPause();
+		Logging.closeStream();
 		System.out.println("*****WorkActivity.onPause");
 	}
 	@Override

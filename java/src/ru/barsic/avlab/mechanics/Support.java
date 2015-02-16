@@ -159,7 +159,7 @@ public class Support extends PhysObject implements IParent {
 	public boolean attach(PhysObject child) {
 		if (child instanceof IGluer && getChildren().isEmpty() && super.attach(child)) {
 			child.getPainter().setPos(((SupportPainter)painter).xArray[3][1] - (child.getPainter().getSize().width) / 4, child.getPainter().getPos().y);
-
+			child.getPainter().setZIndex(painter.getZIndex() - 1);
 			return true;
 
 		}

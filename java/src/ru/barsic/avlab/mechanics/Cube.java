@@ -42,7 +42,7 @@ public class Cube extends PhysObject implements ISuspend {
 			xArray = new int[7];
 			yArray = new int[7];
 			updatePoints();
-			setZIndex(11);
+			setZIndex(12);
 
 		}
 

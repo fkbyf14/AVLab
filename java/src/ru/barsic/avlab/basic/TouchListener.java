@@ -27,10 +27,14 @@ public class TouchListener implements View.OnTouchListener {
 	}
 
 	public static Painter choiceObject(int x, int y) {
-		for (int i = DrawView.painters.size() - 1; i >= 0; i--) {
-			if (DrawView.painters.get(i).isChoice(x, y))
-				return DrawView.painters.get(i);
+		for (Painter painter : DrawView.painters) {
+			if(painter.isChoice(x, y))
+				return painter;
 		}
+//		for (int i = DrawView.painters.size() - 1; i >= 0; i--) {
+//			if (DrawView.painters.get(i).isChoice(x, y))
+//				return DrawView.painters.get(i);
+//		}
 		return null;
 	}
 
@@ -63,10 +67,6 @@ public class TouchListener implements View.OnTouchListener {
 //            selected.setZIndex(GraphScene.maxZIndex);
 //            GraphScene.sortByZ();
 				selected.onTouch(view, event);
-			} else {
-				for (Painter painter : DrawView.painters) {
-					painter.onTouch(view, event);
-				}
 			}
 			break;
 		case MotionEvent.ACTION_POINTER_DOWN:
