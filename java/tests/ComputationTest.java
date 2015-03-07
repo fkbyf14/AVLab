@@ -1,15 +1,33 @@
 import android.app.Application;
+import ru.barsic.avlab.physics.Computation;
 
 public class ComputationTest  extends Application {
 	public static double c = 20d;
 	public static double m = 2d;
 	public static double k = 120d;
+	public static int[][] ArP;
+	public static int[][] ArCh;
 
 
 	public static void main(String[] args) {
+		ArP = new int[2][];
+		ArCh = new int[2][];
 		for (double t = 0d; t < 2d; t+=0.01) {
 			System.out.println(functionX(t , 2d));
+//			ArP[0] = new int[]{634, 493, 493, 597, 597, 389, 389};
+//			ArP[1] = new int[]{-225, -225, -182, -149, 256, 256, -149};
+//			ArCh[0] = new int[]{456, 468, 468, 507, 507, 519, 519, 456};
+//			ArCh[1] = new int[]{83, 78, 58, 58, 78, 83, 159, 159};
+			ArP[0] = new int[]{10,20,20,10};
+			ArP[1] = new int[]{10,10,20,20};
+			ArCh[0] = new int[]{5,7,7,5};
+			ArCh[1] = new int[]{5,5,7,7};
 
+
+			if(Computation.intersect(ArP, ArCh))
+				System.out.println("Trueeeeee");
+			else
+				System.out.println("Жоооооооопа");
 		}
 
 	}
@@ -23,5 +41,6 @@ public class ComputationTest  extends Application {
 		return Math.exp(-ksi*fundFreq*t)*(x0* cos + c2* sin);
 
 	}
+
 
 }

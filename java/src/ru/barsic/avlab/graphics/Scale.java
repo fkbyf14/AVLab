@@ -2,12 +2,14 @@ package ru.barsic.avlab.graphics;
 
 
 import android.graphics.*;
+import ru.barsic.avlab.helper.ScalingUtil;
 
 public class Scale extends Painter implements IRotatable {
 
 	public static final int VERTICAL_TYPE = 1;
 	public static final int HORIZONTAL_TYPE = 2;
 	public static final int CIRCULAR_TYPE = 3;
+	public static final int TEXT_SIZE = 8;
 	protected double min, max;
 	protected double step = 1;
 	protected int count = 1;
@@ -157,7 +159,8 @@ public class Scale extends Painter implements IRotatable {
 		for (int i = 0; i < 2 * count; i += 2) {
 			canvas.drawLine(xArray[0][i], yArray[0][i], xArray[0][i + 1], yArray[0][i + 1], paint);
 		}
-		paint.setTextSize(8);
+
+		paint.setTextSize((float)(TEXT_SIZE * ScalingUtil.getGlobalScaleFactor()));
 		for (int i = 0; i < signCount; i++) {
 			canvas.drawText(str[i], xArray[1][i], yArray[1][i], paint);
 		}

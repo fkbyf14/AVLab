@@ -215,7 +215,7 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	}
 
 	public void setZIndex(int zIndex) {
-		Logging.log("setZIndex",this,"old="+this.zIndex+", new = "+zIndex);
+		Logging.log("setZIndex",this,"oldZ="+this.zIndex+", newZ = "+zIndex);
 //		this.zIndex = zIndex;
 		this.zIndex = zIndex;
 

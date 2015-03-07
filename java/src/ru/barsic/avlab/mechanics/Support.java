@@ -48,6 +48,8 @@ public class Support extends PhysObject implements IParent {
 			int deltaBlock = widthBlock / 7;
 			int depthLever = (size.width / 3);
 			int deltaLever = ((widthBlock - depthLever) / 2);
+			lengthLever = size.height / 3;
+			heightLever = size.height * 2 / 3;
 
 
 

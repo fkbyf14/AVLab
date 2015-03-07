@@ -18,9 +18,11 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 	double maxForce = 20;
 	double minForce = -20;
 	//double step = (maxForce + minForce) / 60;
-	double alpha = Math.PI / 9;
+
 	double k = 114d;
 	public static double c = 10d;
+	public static double INITIAL_ANGLE = Math.PI / 9;
+	double alpha = INITIAL_ANGLE;
 
 
 	public Dynamometer(double x, double y, double width, double height) {
@@ -51,7 +53,7 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 
 		private int[] xArray, yArray;
 		private int[] xSuspArr, ySuspArr;
-		private final double edgeLength = size.width / 2;
+		private double edgeLength = size.width / 2;
 
 		private final int edgeCount = 16;
 		private final double initialSpringLengthY = (edgeCount + 0.5) * Math.sin(alpha) * edgeLength;
@@ -140,6 +142,7 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 		}
 
 		private void drawSpring(Canvas canvas, Path path, Paint paint) {
+			edgeLength = size.width / 2;
 			path.moveTo(xArray[4], yArray[0] + size.width / 30);
 			path.rLineTo((float)(edgeLength / 2 * Math.cos(alpha)), (float)(edgeLength / 2 * Math.sin(alpha)));
 			float edgeX = (float)(edgeLength * Math.cos(alpha));
@@ -220,6 +223,9 @@ public class Dynamometer extends PhysObject implements IGluer, IParent {
 					e.printStackTrace();
 				}
 			}
+			if (child == null)
+				dynamometer.alpha = INITIAL_ANGLE;
+
 		}
 
 	}
