@@ -36,7 +36,7 @@ public class Logging  {
 		log(e + " : " + s);
 	}
 	public  static  void log(String source, Object obj, String s){
-		log(obj + " : " + s);
+		log(source +" : "+ obj + " : " + s);
 
 	}
 
@@ -57,7 +57,7 @@ public class Logging  {
 			if (!Environment.getExternalStorageState().equals(
 				Environment.MEDIA_MOUNTED))
 			{
-				Log.d(LOG_TAG, "SD-карта не доступна: " + Environment.getExternalStorageState());
+				Log.d(LOG_TAG, "SD-карта недоступна: " + Environment.getExternalStorageState());
 				return;
 			}
 			try {

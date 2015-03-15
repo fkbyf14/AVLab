@@ -9,17 +9,24 @@ import ru.barsic.avlab.graphics.Painter;
 public class Weight extends PhysObject implements IWeighing {
 	public Weight(double x, double y, double width, double height, double mass) {
 		super(x, y, width, height, mass);
+		this.y = y - height;
 		painter = new WeightPathPainter(this);
+
 	}
 
 	@Override
 	public int[][] getWeighingPolygon() {
-		return new int[][] {((WeightPathPainter)painter).xArray, ((WeightPathPainter)painter).yArray};
+		int[] x = ((WeightPathPainter)painter).xArray;
+		int[] y = ((WeightPathPainter)painter).yArray;
+		return new int[][] {new int[] {x[6], x[5], x[0], x[7] },  new int[] {y[0], y[5], y[6], y[7]}};
 	}
 
 
 	private class WeightPathPainter extends Painter {
 		private int[] xArray, yArray;
+		int mm = (int)(mass*1000d);
+		String m = Integer.toString(mm);
+
 		public WeightPathPainter(PhysObject obj) {
 			super(obj);
 			xArray = new int[8];
@@ -44,22 +51,34 @@ public class Weight extends PhysObject implements IWeighing {
 
 		@Override
 		public void onDraw(Canvas canvas) {
+
 			Path path = new Path();
 			Paint paint = new Paint();
+
+			RectF basis = new RectF(xArray[0], yArray[7] - size.height / 9, xArray[5], yArray[7] + size.height / 9);
+			paint.setStyle(Paint.Style.FILL);
 			paint.setColor(Color.GRAY);
+			canvas.drawOval(basis, paint);
+			paint.setStyle(Paint.Style.STROKE);
+			paint.setColor(Color.BLACK);
+			canvas.drawOval(basis, paint);
+
 			path.moveTo(xArray[0],yArray[0]);
-			for (int i = 0; i < xArray.length; i++){
+			for (int i = 0; i < xArray.length ; i++){
 				path.lineTo(xArray[i],yArray[i]);
+
 			}
 			path.lineTo(xArray[0],yArray[0]);
 			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(Color.GRAY);
 			canvas.drawPath(path, paint);
 
 			path.reset();
 			path.moveTo(xArray[0],yArray[0]);
-			for (int i = 0; i < xArray.length; i++){
+			for (int i = 0; i < xArray.length - 1; i++){
 				path.lineTo(xArray[i],yArray[i]);
 			}
+			path.moveTo(xArray[7],yArray[7]);
 			path.lineTo(xArray[0],yArray[0]);
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setColor(Color.BLACK);
@@ -72,6 +91,11 @@ public class Weight extends PhysObject implements IWeighing {
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setColor(Color.BLACK);
 			canvas.drawOval(oval, paint);
+			//paint.setStrokeWidth(1);
+			paint.setTextSize(15);
+			//paint.setTextAlign(Paint.Align.CENTER);
+			paint.setStyle(Paint.Style.FILL);
+			canvas.drawText(m, getCenter().x - paint.measureText(m) / 2, yArray[6] - size.height / 9  , paint);
 
 
 		}

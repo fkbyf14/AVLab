@@ -257,6 +257,10 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 		updatePoints();
 	}
 
+	public Point getCenter() {
+		return center;
+	}
+
 	//todo: BUG!!!!!
 //	public void returnDefaultPosition() {
 //		setZIndex(defaultZ);
@@ -273,10 +277,12 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	public boolean onTouch(View v, MotionEvent event) {
 		int x = (int)event.getX();
 		int y = (int)event.getY();
+		int z = object.getPainter().getZIndex();
+
 
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN: // нажатие
-			Logging.log("ACTION_DOWN", this,"x = " + x + ", y = " + y);
+			Logging.log("ACTION_DOWN", this,"x = " + x + ", y = " + y +", z = " +z);
 			if (object.getParent() != null) {
 				object.getParent().detach(object);
 			}
@@ -289,7 +295,7 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 			}
 			break;
 		case MotionEvent.ACTION_UP: // отпускание
-			Logging.log("ACTION_UP", this,"x = " + x + ", y = " + y);
+			Logging.log("ACTION_UP", this,"x = " + x + ", y = " + y +", z = " +z);
 		case MotionEvent.ACTION_CANCEL:
 
 			for (IParent parent : Scene.parents) {
