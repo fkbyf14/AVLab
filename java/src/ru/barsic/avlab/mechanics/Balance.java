@@ -7,59 +7,54 @@ import ru.barsic.avlab.basic.PhysObject;
 import ru.barsic.avlab.basic.TouchListener;
 import ru.barsic.avlab.graphics.DrawView;
 import ru.barsic.avlab.graphics.Painter;
+import ru.barsic.avlab.helper.Logging;
 import ru.barsic.avlab.physics.Computation;
 import ru.barsic.avlab.physics.IParent;
 
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.TimerTask;
 
 public class Balance extends PhysObject implements IParent {
 
-	//--------------- CONSTANTS --------------- 
+	//--------------- CONSTANTS ---------------
 	private static final int LEFT_BOWL = 1;
 	private static final int RIGHT_BOWL = 2;
+	private static final int ANIMATION_STEP = 1;
+
 	private double leftMass = 0;
 	private double rightMass = 0;
+	private List<PhysObject> atLeft = new LinkedList<>();
+	// Текущие объекты на правой чаше
+	private List<PhysObject> atRight = new LinkedList<>();
+	private double deltaMassMax;
+	private double deltaMassMin;
 
-	//--------------- PRIVATE STATIC FIELDS --------------- 
 
-	private static int currentBowl;
+	//--------------- PRIVATE STATIC FIELDS ---------------
 
-	//--------------- PRIVATE STATIC METHODS --------------- 
 
-	//--------------- PRIVATE OBJECT FIELDS --------------- 
+	//--------------- PRIVATE STATIC METHODS ---------------
 
-	//--------------- PUBLIC OBJECT FIELDS --------------- 
+	//--------------- PRIVATE OBJECT FIELDS ---------------
 
-	//--------------- CONSTRUCTORS --------------- 
+	//--------------- PUBLIC OBJECT FIELDS ---------------
+
+	//--------------- CONSTRUCTORS ---------------
 
 	public Balance(double x, double y, double width, double height) {
 		super(x, y, width, height, 0);
 		painter = new BalancePathPainter(this);
 	}
 
-	//--------------- PUBLIC OBJECT OVERRIDEN METHODS --------------- 
+	//--------------- PUBLIC OBJECT OVERRIDDEN METHODS ---------------
 
 	@Override
 	public boolean isInAria(int x, int y) {
-
 		PhysObject object = TouchListener.selected.object;
-		if (object instanceof IWeighing) {
-			//System.out.println("ActivePoligon = " + Arrays.deepToString(getActivePolygon()));
-			//System.out.println("WeighingPolygon = " + Arrays.deepToString(((IWeighing)TouchListener.selected.object).getWeighingPolygon()));
-			if (object.getPainter().getCenter().x <= painter.getCenter().x) {
-				currentBowl = LEFT_BOWL;
-				object.getPainter().setPos(object.getPainter().getPos().x, ((BalancePathPainter)painter).yArray[2][5] - object.getPainter().getSize().height / 2);
-			} else {
-				currentBowl = RIGHT_BOWL;
-				object.getPainter().setPos(object.getPainter().getPos().x, ((BalancePathPainter)painter).yArray[3][5] - object.getPainter().getSize().height / 2);
-			}
-			if (Computation.intersect(getActivePolygon(), ((IWeighing)object).getWeighingPolygon())) {
-
-			}
-		}
 		return object instanceof IWeighing &&
-			Computation.intersect(getActivePolygon(), ((IWeighing)object).getWeighingPolygon());
+				Computation.intersect(getActivePolygon(), ((IWeighing) object).getWeighingPolygon());
 	}
 
 
@@ -67,17 +62,21 @@ public class Balance extends PhysObject implements IParent {
 	public boolean attach(PhysObject child) {
 		if (child instanceof IWeighing) {
 			child.getPainter().setPos(child.getPainter().getPos().x,
-				((BalancePathPainter)painter).yArray[currentBowl == LEFT_BOWL ? 2 : 3][5] - child.getPainter().getSize().height);
+					((BalancePathPainter) painter).yArray[getCurrentBowl(child) == LEFT_BOWL ? 2 : 3][5] - child.getPainter().getSize().height);
 			child.getPainter().setZIndex(getPainter().getZIndex() + 2);
-			//---------------------------- если заатачили то сразу массу прибавили
-			if (currentBowl == LEFT_BOWL)
+			if (getCurrentBowl(child) == LEFT_BOWL) {
 				leftMass += child.mass;
-			else
+				atLeft.add(child);
+			} else {
 				rightMass += child.mass;
+				atRight.add(child);
+			}
 
 			DrawView.timer.schedule(new CalculationTask(), new Date(System.currentTimeMillis()));
 
+			Logging.log("Attach Weight", child, "x = " + x + ", y = " + y + ", leftMass = " + leftMass + ", rightMass = " + rightMass + ", position");
 			return super.attach(child);
+
 
 		}
 		return false;
@@ -85,85 +84,113 @@ public class Balance extends PhysObject implements IParent {
 
 	@Override
 	public boolean detach(PhysObject child) {
-		//----------------------------реализуй правильно метод, я только с массами кусок реализовал (если задетачили то сразу массу отнимаем)
-		if (currentBowl == LEFT_BOWL)
-			leftMass -= child.mass;
-		else
-			rightMass -= child.mass;
-		if (!getChildren().isEmpty()) {
-			boolean result = super.detach(child);
-			DrawView.timer.schedule(new CalculationTask(), new Date(System.currentTimeMillis()));
-			return result;
-		}
-		return false;
-	}
+			super.detach(child);
+			if (atLeft.contains(child)) {
+				leftMass -= child.mass;
+				atLeft.remove(child);
+			}
+			if (atRight.contains(child)) {
+				rightMass -= child.mass;
+				atRight.remove(child);
+			}
 
+
+			DrawView.timer.schedule(new CalculationTask(), new Date(System.currentTimeMillis()));
+			Logging.log("Detach Weight", child, "x = " + x + ", y = " + y + ", leftMass = " + leftMass + ", rightMass = " + rightMass);
+
+		return true;
+	}
 
 
 	@Override
 	public int[][] getActivePolygon() {
-		int[] x = ((BalancePathPainter)painter).xArray[2];
-		int[] y = ((BalancePathPainter)painter).yArray[2];
-		int[] xx = ((BalancePathPainter)painter).xArray[3];
-		int[] yy = ((BalancePathPainter)painter).yArray[3];
-		if (currentBowl == LEFT_BOWL)
-			return new int[][] {new int[] {x[5], x[4], x[3], x[6]}, new int[] {y[3], y[6], y[5], y[4]}};
-		 else
-			return new int[][] {new int[] {xx[5], xx[4], xx[3], xx[6]}, new int[] {yy[3], yy[6], yy[5], yy[4]}};
+		int[] x = ((BalancePathPainter) painter).xArray[2];
+		int[] y = ((BalancePathPainter) painter).yArray[2];
+		int[] xx = ((BalancePathPainter) painter).xArray[3];
+		int[] yy = ((BalancePathPainter) painter).yArray[3];
+		PhysObject object = TouchListener.selected.object;
+		if (getCurrentBowl(object) == LEFT_BOWL)
+			return new int[][]{new int[]{x[5], x[4], x[3], x[6]}, new int[]{y[3], y[6], y[5], y[4]}};
+		else
+			return new int[][]{new int[]{xx[5], xx[4], xx[3], xx[6]}, new int[]{yy[3], yy[6], yy[5], yy[4]}};
+
 	}
 
-	//--------------- PUBLIC OBJECT METHODS --------------- 
+	//--------------- PUBLIC OBJECT METHODS ---------------
 
-	public int getCurrentBowl(PhysObject obj) {
-		return obj.getPainter().getCenter().x <= painter.getCenter().x ? LEFT_BOWL : RIGHT_BOWL;
+	public int getCurrentBowl(PhysObject object) {
+		if (object.getPainter().getCenter().x <= ((BalancePathPainter) painter).xArray[2][4] && object.getPainter().getCenter().y <= ((BalancePathPainter) painter).yArray[2][5] + painter.getSize().height / 5)
+			return LEFT_BOWL;
+		else {
+			if (object.getPainter().getCenter().x >= ((BalancePathPainter) painter).xArray[3][4] && object.getPainter().getCenter().y <= ((BalancePathPainter) painter).yArray[3][5] + painter.getSize().height / 5)
+				return RIGHT_BOWL;
+		}
+		return 0;
 	}
 
-	//--------------- PRIVATE OBJECT OVERRIDEN METHODS --------------- 
+	//--------------- PRIVATE OBJECT OVERRIDDEN METHODS ---------------
 
-	//--------------- PRIVATE OBJECT METHODS --------------- 
+	//--------------- PRIVATE OBJECT METHODS ---------------
 
-	//--------------- PUBLIC INNER CLASSES --------------- 
+	//--------------- PUBLIC INNER CLASSES ---------------
 
-	//--------------- PRIVATE INNER CLASSES --------------- 
+	//--------------- PRIVATE INNER CLASSES ---------------
 
 	private class BalancePathPainter extends Painter {
 
-	//внутри внутренних классов порядок такой же
-
-		private int[][] xArray, yArray;
-		private int[] initialLeft, initialRight;
+		public int[][] xArray, yArray;
+		public int x1;
+		public int y1;
+		public int l;
+		private int deltaMax;
 
 		public BalancePathPainter(PhysObject obj) {
 			super(obj);
 			xArray = new int[4][4];
 			yArray = new int[4][4];
-			initialLeft = yArray[2];
-			initialRight = yArray[3];
+			deltaMax = 30;
+			deltaMassMax = 0.5;
+
+			deltaMassMin = 0.005;
+			l = size.width / 4;
+			x1 = l;
 			setZIndex(100);
 			updatePoints();
 		}
 
 		@Override
-		public void updatePoints() {
-			xArray[0] = new int[] {pos.x, pos.x + size.width, pos.x + size.width + size.width / 10, pos.x - size.width / 10};
-			yArray[0] = new int[] {pos.y, pos.y, pos.y + size.height, pos.y + size.height};
-			xArray[1] = new int[] {pos.x + size.width / 2 - size.width / 30, pos.x + size.width / 2 + size.width / 30, pos.x + size.width / 2 + size.width / 30, pos.x + size.width / 2 - size.width / 30};
-			yArray[1] = new int[] {pos.y + size.height / 2 - size.width, pos.y + size.height / 2 - size.width, pos.y + size.height / 2, pos.y + size.height / 2};
-			xArray[2] = new int[] {pos.x + size.width / 2, pos.x + size.width / 2 - size.width / 4, pos.x + size.width / 2 - size.width / 4, pos.x + size.width / 2 - size.width / 15, pos.x + size.width / 2 - size.width / 15, pos.x + size.width / 15, pos.x + size.width / 15};
-			yArray[2] = new int[] {pos.y + size.height / 2 - size.width + size.width / 15, pos.y + size.height / 2 - size.width + size.width / 15, pos.y + size.height / 2 - size.width + size.width / 7, pos.y + size.height / 2 - size.width + size.width / 5, pos.y, pos.y, pos.y + size.height / 2 - size.width + size.width / 5};
-			xArray[3] = new int[] {pos.x + size.width / 2, pos.x + size.width / 2 + size.width / 4, pos.x + size.width / 2 + size.width / 4, pos.x + size.width - size.width / 15, pos.x + size.width - size.width / 15, pos.x + size.width / 2 + size.width / 15, pos.x + size.width / 2 + size.width / 15};
-			yArray[3] = new int[] {yArray[1][0] + size.width / 15, yArray[1][0] + size.width / 15, yArray[1][0] + size.width / 7, yArray[1][0] + size.width / 5, pos.y, pos.y, yArray[1][0] + size.width / 5};
+		public boolean isChoice(int x, int y) {
+			return false;
+		}
 
+		@Override
+		public void updatePos() {
+			super.updatePos();
+			int oldL = l;
+			l = size.width / 4;
+			x1 = x1 * l / oldL;
+		}
+
+		@Override
+		public void updatePoints() {
+			xArray[0] = new int[]{getPos().x, getPos().x + size.width, getPos().x + size.width + size.width / 10, getPos().x - size.width / 10};
+			yArray[0] = new int[]{getPos().y, getPos().y, getPos().y + size.height, getPos().y + size.height};
+			xArray[1] = new int[]{getPos().x + size.width / 2 - size.width / 30, getPos().x + size.width / 2 + size.width / 30, getPos().x + size.width / 2 + size.width / 30, getPos().x + size.width / 2 - size.width / 30};
+			yArray[1] = new int[]{getPos().y + size.height / 2 - size.width, getPos().y + size.height / 2 - size.width, getPos().y + size.height / 2, getPos().y + size.height / 2};
+			xArray[2] = new int[]{getPos().x + size.width / 2, getPos().x + size.width / 2 - l, getPos().x + size.width / 2 - l, getPos().x + size.width / 2 - x1 + 3 * l / 4, getPos().x + size.width / 2 - x1 + 3 * l / 4, getPos().x + size.width / 2 - x1 - 3 * l / 4, getPos().x + size.width / 2 - x1 - 3 * l / 4};
+			yArray[2] = new int[]{getPos().y + size.height / 2 - size.width + size.width / 15, getPos().y + size.height / 2 - size.width + size.width / 15 + y1, getPos().y + size.height / 2 - size.width + size.width / 7 + y1, getPos().y + size.height / 2 - size.width + size.width / 5 + y1, getPos().y + y1, getPos().y + y1, getPos().y + size.height / 2 - size.width + size.width / 5 + y1};
+			xArray[3] = new int[]{getPos().x + size.width / 2, getPos().x + size.width / 2 + x1, getPos().x + size.width / 2 + x1, getPos().x + size.width / 2 + x1 + 3 * l / 4, getPos().x + size.width / 2 + x1 + 3 * l / 4, getPos().x + size.width / 2 + x1 - 3 * l / 4, getPos().x + size.width / 2 + x1 - 3 * l / 4};
+			yArray[3] = new int[]{yArray[1][0] + size.width / 15, yArray[1][0] + size.width / 15 - y1, yArray[1][0] + size.width / 7 - y1, yArray[1][0] + size.width / 5 - y1, getPos().y - y1, getPos().y - y1, yArray[1][0] + size.width / 5 - y1};
 		}
 
 		@Override
 		public void changePosition(int dx, int dy) {
-			for (int i = 0; i < xArray.length; i++) {
-				for (int j = 0; j < xArray[i].length; j++) {
-					xArray[i][j] += dx;
-					yArray[i][j] += dy;
-				}
-			}
+//            for (int i = 0; i < xArray.length; i++) {
+//                for (int j = 0; j < xArray[i].length; j++) {
+//                    xArray[i][j] += dx;
+//                    yArray[i][j] += dy;
+//                }
+//            }
 		}
 
 		@Override
@@ -214,18 +241,16 @@ public class Balance extends PhysObject implements IParent {
 			canvas.drawPath(path, paint);
 
 			drawLeftBowl(canvas, path, paint);
-
 			drawRightBowl(canvas, path, paint);
 		}
-
 
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
 			super.onTouch(v, event);
-			if (event.getAction() == MotionEvent.ACTION_DOWN ) {
+			if (event.getAction() == MotionEvent.ACTION_DOWN) {
 				if (!getChildren().isEmpty())
 					painter.setZIndex(100);
-				for(PhysObject p : getChildren()) {
+				for (PhysObject p : getChildren()) {
 					p.getPainter().setZIndex(getZIndex() + 10);
 				}
 			}
@@ -233,7 +258,7 @@ public class Balance extends PhysObject implements IParent {
 		}
 
 		private void drawRightBowl(Canvas canvas, Path path, Paint paint) {
-			path.reset();//правая чашка
+			path.reset();
 			path.moveTo(xArray[3][0], yArray[3][0]);
 			for (int i = 0; i < xArray[3].length; i++) {
 				path.lineTo(xArray[3][i], yArray[3][i]);
@@ -252,8 +277,7 @@ public class Balance extends PhysObject implements IParent {
 		}
 
 		private void drawLeftBowl(Canvas canvas, Path path, Paint paint) {
-			path.reset();//левая чашка
-			//System.out.println("-------------------"+Arrays.deepToString(yArray));
+			path.reset();
 			path.moveTo(xArray[2][0], yArray[2][0]);
 			for (int i = 0; i < xArray[2].length; i++) {
 				path.lineTo(xArray[2][i], yArray[2][i]);
@@ -270,52 +294,59 @@ public class Balance extends PhysObject implements IParent {
 			paint.setColor(Color.BLACK);
 			canvas.drawOval(ovalL, paint);
 		}
+
 	}
 
 	private class CalculationTask extends TimerTask {
 
-	//balance нам тут не нужен, так как это класс не статический(т.е. он существует только для объекта, поэтому он знает все о своем внешнем классе. другой такой объект не может получить такой же экземляр этого класса, )
-		//поэтому вметсто balance.getChildren()(как для статического внетреннего класса) мы пишем просто getchildren()
+		public static final double T_MAX = 100;
+		public static final double T_MIN = 10;
 		private final BalancePathPainter painter;
-
-//		private double leftMass = 0;
-//		private double rightMass = 0;
+		private long sleepTime;
+		private int delta;
 
 		public CalculationTask() {
-			this.painter = (BalancePathPainter)getPainter();
+			this.painter = (BalancePathPainter) getPainter();
+			double deltaMass = leftMass - rightMass;
+			if (deltaMass > deltaMassMax)
+				deltaMass = deltaMassMax;
+			delta = (int) (deltaMass * painter.deltaMax / deltaMassMax);
+			sleepTime = (long) ((deltaMass - deltaMassMax) * (T_MAX - T_MIN) / (deltaMassMin - deltaMassMax) + T_MIN);
+			System.out.println("deltaMass="+deltaMass);
+			System.out.println("sleepTime="+sleepTime);
 		}
 
 		@Override
 		public void run() {
-			for (PhysObject p : getChildren()) {
-
-
-				if (leftMass > rightMass && p.getChildren().isEmpty()) {
-					//цикл по левой чашке
-					for (int i = 0; i < painter.yArray[2].length; i++) {
-						painter.yArray[2][i] += painter.getSize().height - painter.getSize().height / 3;
-						painter.yArray[3][i] -= painter.getSize().height + painter.getSize().height / 3;
-						if (p.getPainter().getCenter().x < painter.getCenter().x){
-							p.getPainter().getPos().y +=  painter.getSize().height - painter.getSize().height / 3;
-						}
-						else
-							p.getPainter().getPos().y -=  painter.getSize().height + painter.getSize().height / 3;
-					}
-
+			if (Math.abs(delta) > painter.deltaMax)
+				delta = (int) (Math.signum(delta) * painter.deltaMax);
+			int deltaSign = (int) Math.signum(delta - painter.y1);
+			while (true) {
+				for (PhysObject p : atLeft)
+					p.getPainter().moveBy(0, deltaSign * ANIMATION_STEP);
+				for (PhysObject p : atRight)
+					p.getPainter().moveBy(0, deltaSign * -1 * ANIMATION_STEP);
+				if (deltaSign > 0) {
+					painter.y1 += ANIMATION_STEP;
+					painter.x1 = (int) Math.sqrt(painter.l * painter.l - painter.y1 * painter.y1);
+					if (delta <= painter.y1)
+						break;
 				} else {
-					//цикл по правой чашке
-					for (int i = 0; i < painter.yArray[3].length; i++) {
-						painter.yArray[2][i] -= painter.getSize().height + painter.getSize().height / 3;
-						painter.yArray[3][i] += painter.getSize().height - painter.getSize().height / 3;
-						if (p.getPainter().getCenter().x < painter.getCenter().x){
-							p.getPainter().getPos().y -=  painter.getSize().height + painter.getSize().height / 3;
-						}
-						else
-							p.getPainter().getPos().y +=  painter.getSize().height - painter.getSize().height / 3;
-					}
+					painter.y1 -= ANIMATION_STEP;
+					painter.x1 = (int) Math.sqrt(painter.l * painter.l - painter.y1 * painter.y1);
+					if (delta >= painter.y1)
+						break;
+				}
+				painter.updatePoints();
+				try {
+					Thread.sleep(sleepTime);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
+			painter.updatePoints();
 		}
 	}
-
 }
+
+

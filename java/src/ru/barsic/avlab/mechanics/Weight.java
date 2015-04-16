@@ -9,22 +9,20 @@ import ru.barsic.avlab.graphics.Painter;
 public class Weight extends PhysObject implements IWeighing {
 	public Weight(double x, double y, double width, double height, double mass) {
 		super(x, y, width, height, mass);
-		this.y = y - height;
 		painter = new WeightPathPainter(this);
-
 	}
 
 	@Override
 	public int[][] getWeighingPolygon() {
-		int[] x = ((WeightPathPainter)painter).xArray;
-		int[] y = ((WeightPathPainter)painter).yArray;
-		return new int[][] {new int[] {x[6], x[5], x[0], x[7] },  new int[] {y[0], y[5], y[6], y[7]}};
+		int[] x = ((WeightPathPainter) painter).xArray;
+		int[] y = ((WeightPathPainter) painter).yArray;
+		return new int[][]{new int[]{x[6], x[5], x[0], x[7]}, new int[]{y[0], y[5], y[6], y[7]}};
 	}
 
 
 	private class WeightPathPainter extends Painter {
 		private int[] xArray, yArray;
-		int mm = (int)(mass*1000d);
+		int mm = (int) (mass * 1000d);
 		String m = Integer.toString(mm);
 
 		public WeightPathPainter(PhysObject obj) {
@@ -37,8 +35,8 @@ public class Weight extends PhysObject implements IWeighing {
 
 		@Override
 		public void updatePoints() {
-			xArray = new  int[] {pos.x, pos.x + size.width / 5, pos.x + size.width / 5, pos.x + size.width - size.width / 5, pos.x + size.width - size.width / 5, pos.x + size.width, pos.x + size.width, pos.x};
-			yArray = new int[] {pos.y, pos.y - size.height / 15, pos.y - size.height / 3, pos.y - size.height / 3, pos.y - size.height / 15, pos.y, pos.y + size.height, pos.y + size.height};
+			xArray = new int[]{getPos().x, getPos().x + size.width / 5, getPos().x + size.width / 5, getPos().x + size.width - size.width / 5, getPos().x + size.width - size.width / 5, getPos().x + size.width, getPos().x + size.width, getPos().x};
+			yArray = new int[]{getPos().y, getPos().y - size.height / 15, getPos().y - size.height / 3, getPos().y - size.height / 3, getPos().y - size.height / 15, getPos().y, getPos().y + size.height, getPos().y + size.height};
 		}
 
 		@Override
@@ -63,23 +61,23 @@ public class Weight extends PhysObject implements IWeighing {
 			paint.setColor(Color.BLACK);
 			canvas.drawOval(basis, paint);
 
-			path.moveTo(xArray[0],yArray[0]);
-			for (int i = 0; i < xArray.length ; i++){
-				path.lineTo(xArray[i],yArray[i]);
+			path.moveTo(xArray[0], yArray[0]);
+			for (int i = 0; i < xArray.length; i++) {
+				path.lineTo(xArray[i], yArray[i]);
 
 			}
-			path.lineTo(xArray[0],yArray[0]);
+			path.lineTo(xArray[0], yArray[0]);
 			paint.setStyle(Paint.Style.FILL);
 			paint.setColor(Color.GRAY);
 			canvas.drawPath(path, paint);
 
 			path.reset();
-			path.moveTo(xArray[0],yArray[0]);
-			for (int i = 0; i < xArray.length - 1; i++){
-				path.lineTo(xArray[i],yArray[i]);
+			path.moveTo(xArray[0], yArray[0]);
+			for (int i = 0; i < xArray.length - 1; i++) {
+				path.lineTo(xArray[i], yArray[i]);
 			}
-			path.moveTo(xArray[7],yArray[7]);
-			path.lineTo(xArray[0],yArray[0]);
+			path.moveTo(xArray[7], yArray[7]);
+			path.lineTo(xArray[0], yArray[0]);
 			paint.setStyle(Paint.Style.STROKE);
 			paint.setColor(Color.BLACK);
 			canvas.drawPath(path, paint);
@@ -95,10 +93,11 @@ public class Weight extends PhysObject implements IWeighing {
 			paint.setTextSize(15);
 			//paint.setTextAlign(Paint.Align.CENTER);
 			paint.setStyle(Paint.Style.FILL);
-			canvas.drawText(m, getCenter().x - paint.measureText(m) / 2, yArray[6] - size.height / 9  , paint);
+			canvas.drawText(m, getCenter().x - paint.measureText(m) / 2, yArray[6] - size.height / 9, paint);
 
 
 		}
+
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
 			super.onTouch(v, event);

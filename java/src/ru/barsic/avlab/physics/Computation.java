@@ -1,6 +1,6 @@
 package ru.barsic.avlab.physics;
 
-public abstract class Computation {
+public class Computation {
 
 	private Computation() {
 	}
@@ -63,13 +63,12 @@ public abstract class Computation {
 	}
 
 	public static double[][] rotateRect(double xS, double yS, double widthS,
-		double heightS, double x0, double y0, double a)
-	{
-		double[][] arrRect = new double[][] {
-			{xS, yS},
-			{xS + widthS, yS},
-			{xS + widthS, yS + heightS},
-			{xS, yS + heightS},};
+										double heightS, double x0, double y0, double a) {
+		double[][] arrRect = new double[][]{
+				{xS, yS},
+				{xS + widthS, yS},
+				{xS + widthS, yS + heightS},
+				{xS, yS + heightS},};
 		for (int i = 0; i <= 3; i++) {
 			double temp = arrRect[i][0];
 			arrRect[i][0] = rotatePoint(arrRect[i][0], arrRect[i][1], x0, y0, a)[0];
@@ -79,8 +78,7 @@ public abstract class Computation {
 	}
 
 	public static double[] rotateCircle(double x, double y, double width, double x0,
-		double y0, double da)
-	{
+										double y0, double da) {
 		double[] newXY = new double[2];
 		double xc, yc; //координаты центра окружности
 		xc = rotatePoint(x + width / 2, y + width / 2, x0, y0, da)[0];
@@ -96,15 +94,15 @@ public abstract class Computation {
 		int[] xArrayChild = arraysChild[0];
 		int[] yArrayChild = arraysChild[1];
 
-		if(xArrayParent[1] >= xArrayChild[0] && xArrayChild[1] >= xArrayParent[0] && yArrayChild[0] <= yArrayParent[3] && yArrayChild[3] >= yArrayParent[0]) {
+		if (xArrayParent[1] >= xArrayChild[0] && xArrayChild[1] >= xArrayParent[0] && yArrayChild[0] <= yArrayParent[3] && yArrayChild[3] >= yArrayParent[0]) {
 			return true;
 		}
-			return false;
+		return false;
 	}
 
-	}
+}
 	/*
-     public void rotate(double cx, double cy, double angle) {
+	 public void rotate(double cx, double cy, double angle) {
      double da = angle - this.angle;
      this.angle = angle;
      rotate(Math.cos(angle), Math.sin(angle));
@@ -131,4 +129,3 @@ public abstract class Computation {
      p.rotate(cos, sin);
      }
      }*/
-

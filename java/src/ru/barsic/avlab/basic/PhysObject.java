@@ -1,17 +1,13 @@
 package ru.barsic.avlab.basic;
 
-import java.util.ArrayList;
-
 import ru.barsic.avlab.graphics.Painter;
 import ru.barsic.avlab.helper.Logging;
 import ru.barsic.avlab.helper.ScalingUtil;
 import ru.barsic.avlab.physics.Scene;
 
-//import org.apache.log4j.Logger;
+import java.util.ArrayList;
 
 public abstract class PhysObject {
-
-//	private static final Logger log = Logger.getLogger(PhysObject.class);
 
 	//================= public instance field =================
 
@@ -26,9 +22,25 @@ public abstract class PhysObject {
 	private PhysObject parent;
 	private ArrayList<PhysObject> children = new ArrayList<>();
 
-	private double x1, y1, x2, y2;
-	private double dt = 0.01;
+	protected PhysObject(double x, double y, double width, double height, double mass) {
+		Scene.allocation(this);
+		this.x = x;
+		this.y = y;
+		this.defaultX = x;
+		this.defaultY = y;
+		this.width = width;
+		this.height = height;
+		this.mass = mass;
+	}
 
+	@Override
+	public String toString() {
+		return "{" + getClass().getSimpleName() + "," +
+				"position=(" + ScalingUtil.scalingRealSizeToX(x) + "," + ScalingUtil.scalingRealSizeToY(y) + ")," +
+				"par=" + printParent() + "," +
+				"kids=" + printChildren() +
+				"}";
+	}
 	//================= public instance method =================
 
 	public Painter getPainter() {
@@ -44,17 +56,6 @@ public abstract class PhysObject {
 	}
 
 
-	protected PhysObject(double x, double y, double width, double height, double mass) {
-		Scene.allocation(this);
-		this.x = x;
-		this.y = y;
-		this.defaultX = x;
-		this.defaultY = y;
-		this.width = width;
-		this.height = height;
-		this.mass = mass;
-	}
-
 	/**
 	 * Добавить дочерний объект.
 	 *
@@ -68,8 +69,6 @@ public abstract class PhysObject {
 			return false;
 		children.add(child);
 		child.parent = this;
-		child.painter.setHolder(painter);
-//		log.info(this + " attach " + child);
 		return true;
 	}
 
@@ -83,23 +82,20 @@ public abstract class PhysObject {
 		Logging.log("detach", this, "detach child = " + child);
 		children.remove(child);
 		child.parent = null;
-		child.painter.setHolder(null);
 		return true;
 	}
 
-	public void setPos(double x, double y) {
-		this.x = x;
-		this.y = y;
-		painter.setPos((int)(this.x), (int)(this.y));
+	public void updatePos() {
+		if (painter != null) {
+			this.x = ScalingUtil.scalingXToRealSize(painter.getPos().x) + World.deviceX;
+			this.y = ScalingUtil.scalingYToRealSize(painter.getPos().y) + World.deviceY;
+		}
 	}
 
-	@Override
-	public String toString() {
-		return "{" + getClass().getSimpleName() + "," +
-			"position=(" + ScalingUtil.scalingRealSizeX(x) + "," + ScalingUtil.scalingRealSizeY(y) + ")," +
-			"par=" + printParent() + "," +
-			"kids=" + printChildren() +
-			"}";
+	public void moveToDefault() {
+		this.x = defaultX;
+		this.y = defaultY;
+		painter.updatePos();
 	}
 
 	private String printParent() {

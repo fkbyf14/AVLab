@@ -33,13 +33,18 @@
     <CheckBox
             android:layout_width="134dp"
             android:layout_height="wrap_content"
-            android:text="Orb1"
-            android:id="@+id/orb1" android:layout_gravity="center_horizontal"/>
+            android:text="Orbs"
+            android:id="@+id/orb" android:layout_gravity="center_horizontal"/>
     <CheckBox
             android:layout_width="134dp"
             android:layout_height="wrap_content"
-            android:text="Orb2"
-            android:id="@+id/orb2" android:layout_gravity="center_horizontal"/>
+            android:text="Balance"
+            android:id="@+id/balance" android:layout_gravity="center_horizontal"/>
+    <CheckBox
+            android:layout_width="134dp"
+            android:layout_height="wrap_content"
+            android:text="Weight"
+            android:id="@+id/weight" android:layout_gravity="center_horizontal"/>
     <Button
             android:layout_width="134dp"
             android:layout_height="wrap_content"

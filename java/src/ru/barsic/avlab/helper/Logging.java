@@ -1,22 +1,23 @@
 package ru.barsic.avlab.helper;
 
-import java.io.*;
+import android.os.Environment;
+import android.util.Log;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import android.os.Environment;
-import android.util.Log;
-
-public class Logging  {
-	static final String LOG_TAG = "myLogs";
-
-
+public class Logging {
+	private static final String LAUNCH_SEPARATOR = "------------------------------------------------------------";
+	private static final String LOG_TAG = "myLogs";
 	private static final String FILE_NAME = "log.txt";
 	private static final String AVLAB_LOG = "AVLabLog";
 	private static String DESC = "Log ";
 	private static String LINE_SEPARATOR = System.getProperty("line.separator");
-	public static final String LAUNCH_SEPARATOR = "------------------------------------------------------------";
 
 
 	private static DateFormat d = new SimpleDateFormat("dd.MM hh:mm:ss");
@@ -25,18 +26,20 @@ public class Logging  {
 
 	public static int type = 1;
 
-	public static void log(String s){
-		if(type > 0)
-			System.out.println(DESC + d.format(new Date())+" : "+s);
+	public static void log(String s) {
+		if (type > 0)
+			System.out.println(DESC + d.format(new Date()) + " : " + s);
 
 		if (type < 2)
-			writeFileSD(DESC + d.format(new Date())+" : "+s);
+			writeFileSD(DESC + d.format(new Date()) + " : " + s);
 	}
-	public  static  void log(Exception e, String s){
+
+	public static void log(Exception e, String s) {
 		log(e + " : " + s);
 	}
-	public  static  void log(String source, Object obj, String s){
-		log(source +" : "+ obj + " : " + s);
+
+	public static void log(String source, Object obj, String s) {
+		log(source + " : " + obj + " : " + s);
 
 	}
 
@@ -51,12 +54,11 @@ public class Logging  {
 		}
 	}
 
-	static void writeFileSD(String s) {
+	private static void writeFileSD(String s) {
 		if (bw == null) {
 			// проверяем доступность SD
 			if (!Environment.getExternalStorageState().equals(
-				Environment.MEDIA_MOUNTED))
-			{
+					Environment.MEDIA_MOUNTED)) {
 				Log.d(LOG_TAG, "SD-карта недоступна: " + Environment.getExternalStorageState());
 				return;
 			}

@@ -1,6 +1,5 @@
 package ru.barsic.avlab.molecular;
 
-import android.annotation.SuppressLint;
 import android.graphics.*;
 import android.view.MotionEvent;
 import android.view.View;
@@ -9,21 +8,25 @@ import ru.barsic.avlab.graphics.Painter;
 import ru.barsic.avlab.graphics.Scale;
 import ru.barsic.avlab.physics.IGluer;
 
-public class Thermometer extends PhysObject implements IGluer {
-	private final static double TEMPERATURE = 30;
+public class Thermometer extends PhysObject implements IGluer, IMeasuring {
+	private final static double TEMPERATURE = 20;
 	private double maxT = 100;
 	private double minT = 0;
-	double step = (maxT - minT) / 100;
+	private double step = (maxT - minT) / 100;
 
-
-	public Thermometer(double x, double y, double width, double height) {
-		super(x, y, width, height, 0);
+	public Thermometer(double x, double y, double width, double height, double mass) {
+		super(x, y, width, height, mass);
 		painter = new ThermometerPathPainter(this);
 	}
 
 	@Override
 	public int[][] getGlueyPolygon() {
-		return new int[][] {((ThermometerPathPainter)painter).xArray, ((ThermometerPathPainter)painter).yArray};
+		return new int[][]{((ThermometerPathPainter) painter).xArray, ((ThermometerPathPainter) painter).yArray};
+	}
+
+	@Override
+	public int[][] getMeasuringPolygon() {
+		return new int[][]{((ThermometerPathPainter) painter).xArray, ((ThermometerPathPainter) painter).yArray};
 	}
 
 	private class ThermometerPathPainter extends Painter {
@@ -41,19 +44,12 @@ public class Thermometer extends PhysObject implements IGluer {
 			setZIndex(10);
 		}
 
-		private int calcHeightHg() {
-			int y1 = lineScale.getY();
-			int y2 = lineScale.getY() + lineScale.getSize().height;
-			return (int)((y1 * (TEMPERATURE - minT) + y2 * (maxT - TEMPERATURE)) /
-				(maxT - minT));
-		}
-
 		@Override
 		public void updatePoints() {
-			lineScale.setPos(pos.x + size.width / 3, pos.y + 15);
+			lineScale.setPos(getPos().x + size.width / 3, getPos().y + 15);
 			lineScale.setSize(size.width / 4, size.height - 20);
-			xArray = new int[] {pos.x, pos.x + size.width, pos.x + size.width, pos.x, pos.x + size.width / 2};
-			yArray = new int[] {pos.y, pos.y, pos.y + size.height, pos.y + size.height, calcHeightHg()};
+			xArray = new int[]{getPos().x, getPos().x + size.width, getPos().x + size.width, getPos().x, getPos().x + size.width / 2};
+			yArray = new int[]{getPos().y, getPos().y, getPos().y + size.height, getPos().y + size.height, calcHeightHg()};
 		}
 
 		@Override
@@ -64,7 +60,6 @@ public class Thermometer extends PhysObject implements IGluer {
 			}
 		}
 
-		@SuppressLint("DrawAllocation")
 		@Override
 		public void onDraw(Canvas canvas) {
 			Path path = new Path();
@@ -74,7 +69,7 @@ public class Thermometer extends PhysObject implements IGluer {
 			int peakWidth = size.width / 4;
 			int peakHeight = size.height / 5;
 			int peakRad = size.width / 8;
-			int rad = (size.width - peakWidth) /2;
+			int rad = (size.width - peakWidth) / 2;
 
 
 			path.moveTo(xArray[0], yArray[0] + rad);
@@ -82,24 +77,17 @@ public class Thermometer extends PhysObject implements IGluer {
 			path.lineTo(xArray[1] - rad, yArray[1]);
 			path.quadTo(xArray[1], yArray[1], xArray[1], yArray[1] + rad);
 			path.lineTo(xArray[2], yArray[2] - rad);
-			path.quadTo( xArray[2], yArray[2],xArray[2] - rad, yArray[2]);
-//			path.lineTo(xArray[2] - rad, yArray[2]);
-			//
+			path.quadTo(xArray[2], yArray[2], xArray[2] - rad, yArray[2]);
 			path.lineTo(xArray[4] + peakWidth / 2, yArray[2] + peakHeight);
 			path.arcTo(new RectF(xArray[4] - peakWidth / 2, yArray[2] + peakHeight - peakRad,
-				xArray[4] + peakWidth / 2, yArray[2] + peakHeight + peakRad), 0, 180);
-			path.lineTo(xArray[4] - peakWidth / 2, yArray[2] );
-			//
-//			path.lineTo(xArray[3], yArray[3] - rad);
-			path.quadTo( xArray[3], yArray[3],xArray[3], yArray[3] - rad);
+					xArray[4] + peakWidth / 2, yArray[2] + peakHeight + peakRad), 0, 180);
+			path.lineTo(xArray[4] - peakWidth / 2, yArray[2]);
+			path.quadTo(xArray[3], yArray[3], xArray[3], yArray[3] - rad);
 			path.lineTo(xArray[0], yArray[0] + rad);
-			canvas.drawPath(path,paint);
+			canvas.drawPath(path, paint);
 			paint.setColor(Color.BLACK);
 			paint.setStyle(Paint.Style.STROKE);
 			canvas.drawPath(path, paint);
-
-
-
 
 			paint.setColor(Color.rgb(147, 219, 230));
 			paint.setStyle(Paint.Style.FILL);
@@ -111,7 +99,7 @@ public class Thermometer extends PhysObject implements IGluer {
 
 			paint.setColor(Color.RED);
 			paint.setStyle(Paint.Style.FILL);
-			 rect = new RectF(xArray[4]- peakWidth / 4, yArray[4], xArray[4] + peakWidth / 4, yArray[2] + peakHeight);
+			rect = new RectF(xArray[4] - peakWidth / 4, yArray[4], xArray[4] + peakWidth / 4, yArray[2] + peakHeight);
 			canvas.drawRoundRect(rect, 1, 1, paint);
 			lineScale.onDraw(canvas);
 
@@ -121,7 +109,7 @@ public class Thermometer extends PhysObject implements IGluer {
 			pathPeak.moveTo(xArray[4] + peakWidth / 2, yArray[2] + peakHeight * 2 / 3);
 			pathPeak.lineTo(xArray[4] + peakWidth / 2, yArray[2] + peakHeight);
 			pathPeak.arcTo(new RectF(xArray[4] - peakWidth / 2, yArray[2] + peakHeight - peakRad,
-				xArray[4] + peakWidth / 2, yArray[2] + peakHeight + peakRad), 0, 180);
+					xArray[4] + peakWidth / 2, yArray[2] + peakHeight + peakRad), 0, 180);
 			pathPeak.lineTo(xArray[4] - peakWidth / 2, yArray[2] + peakHeight * 2 / 3);
 			pathPeak.lineTo(xArray[4] + peakWidth / 2, yArray[2] + peakHeight * 2 / 3);
 			canvas.drawPath(pathPeak, paint);
@@ -138,6 +126,13 @@ public class Thermometer extends PhysObject implements IGluer {
 					moveToDefault();
 			}
 			return true;
+		}
+
+		private int calcHeightHg() {
+			int y1 = lineScale.getPos().y;
+			int y2 = lineScale.getPos().y + lineScale.getSize().height;
+			return (int) ((y1 * (TEMPERATURE - minT) + y2 * (maxT - TEMPERATURE)) /
+					(maxT - minT));
 		}
 	}
 }

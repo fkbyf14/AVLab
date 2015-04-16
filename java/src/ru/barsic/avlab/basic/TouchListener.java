@@ -26,98 +26,96 @@ public class TouchListener implements View.OnTouchListener {
 		this.screenWidth = screenWidth;
 	}
 
-	public static Painter choiceObject(int x, int y) {
-		for (Painter painter : DrawView.painters) {
-			if(painter.isChoice(x, y))
-				return painter;
-		}
-//		for (int i = DrawView.painters.size() - 1; i >= 0; i--) {
-//			if (DrawView.painters.get(i).isChoice(x, y))
-//				return DrawView.painters.get(i);
-//		}
-		return null;
-	}
-
 	@Override
 	public boolean onTouch(View view, MotionEvent event) {
-		int x = (int)event.getX();
-		int y = (int)event.getY();
+		int x = (int) event.getX();
+		int y = (int) event.getY();
 		int touchCount = event.getPointerCount();
 		int currentTouch = event.getActionIndex();
 		switch (event.getActionMasked()) {
-		case MotionEvent.ACTION_DOWN: // нажатие
-			selected = choiceObject(x, y);
-			System.out.println("Mouse pressed selected = " + selected);
-			addX = x;
-			addY = y;
-			firstFingerX = x;
-			firstFingerY = y;
-
-			if (selected != null) {
-				currentZ = selected.getZIndex();
-				selected.setZIndex(DrawView.maxZIndex);
-				Painter h = selected;
-				while (h.getHolder() != null) {
-					h = h.getHolder();
-					if (h.isMovable())
-						break;
-				}
-				if (!selected.isMovable())
-					selected = h;
-//            selected.setZIndex(GraphScene.maxZIndex);
-//            GraphScene.sortByZ();
-				selected.onTouch(view, event);
-			}
-			break;
-		case MotionEvent.ACTION_POINTER_DOWN:
-			if (startDistance == -1 && currentTouch == 1) {
-				secondFingerX = (int)event.getX(1);
-				secondFingerY = (int)event.getY(1);
-				startDistance = calcDistance(firstFingerX, firstFingerY, secondFingerX, secondFingerY);
-				startScaleFactor = ScalingUtil.getGlobalScaleFactor();
-			}
-			break;
-		case MotionEvent.ACTION_MOVE: // движение
-			if (selected != null)
-				selected.onTouch(view, event);
-			else
-				DrawView.moveVisibleArea(x - addX, y - addY);
-			addX = x;
-			addY = y;
-			if (currentTouch == 0) {
+			case MotionEvent.ACTION_DOWN: // нажатие
+				selected = choiceObject(x, y);
+				System.out.println("Mouse pressed selected = " + selected);
+				addX = x;
+				addY = y;
 				firstFingerX = x;
 				firstFingerY = y;
-			}
 
-			if (currentTouch == 1) {
-				secondFingerX = (int)event.getX(1);
-				secondFingerY = (int)event.getY(1);
-			}
-			if (startDistance != -1)
-				ScalingUtil.setGlobalScaleFactor(startScaleFactor *
-					calcDistance(firstFingerX, firstFingerY, secondFingerX, secondFingerY) / startDistance);
-			break;
-		case MotionEvent.ACTION_UP: // отпускание
-		case MotionEvent.ACTION_CANCEL:
-			if (selected != null) {
-				System.out.println("Mouse pressed released = " + selected);
-				selected.setZIndex(currentZ);
-				selected.onTouch(view, event);
-			}
-			break;
-		case MotionEvent.ACTION_POINTER_UP:
-			if (touchCount == 2) {
-				System.out.println("!!!!!!!!!!!!!!!!!");
-				startDistance = -1;
-			}
-			break;
+				if (selected != null) {
+					currentZ = selected.getZIndex();
+					selected.setZIndex(DrawView.maxZIndex);
+					Painter h = selected;
+					while (h.getHolder() != null) {
+						h = h.getHolder();
+						if (h.isMovable())
+							break;
+					}
+					if (!selected.isMovable())
+						selected = h;
+//            selected.setZIndex(GraphScene.maxZIndex);
+//            GraphScene.sortByZ();
+					selected.onTouch(view, event);
+				}
+				break;
+			case MotionEvent.ACTION_POINTER_DOWN:
+				if (startDistance == -1 && currentTouch == 1) {
+					secondFingerX = (int) event.getX(1);
+					secondFingerY = (int) event.getY(1);
+					startDistance = calcDistance(firstFingerX, firstFingerY, secondFingerX, secondFingerY);
+					startScaleFactor = ScalingUtil.getGlobalScaleFactor();
+				}
+				break;
+			case MotionEvent.ACTION_MOVE: // движение
+				if (selected != null)
+					selected.onTouch(view, event);
+				else
+					DrawView.moveVisibleArea(x - addX, y - addY);
+				addX = x;
+				addY = y;
+				if (currentTouch == 0) {
+					firstFingerX = x;
+					firstFingerY = y;
+				}
+
+				if (currentTouch == 1) {
+					secondFingerX = (int) event.getX(1);
+					secondFingerY = (int) event.getY(1);
+				}
+				if (startDistance != -1)
+					ScalingUtil.setGlobalScaleFactor(startScaleFactor *
+							calcDistance(firstFingerX, firstFingerY, secondFingerX, secondFingerY) / startDistance);
+				break;
+			case MotionEvent.ACTION_UP: // отпускание
+			case MotionEvent.ACTION_CANCEL:
+				if (selected != null) {
+					System.out.println("Mouse pressed released = " + selected);
+					selected.setZIndex(currentZ);
+					selected.onTouch(view, event);
+					selected = null;
+				}
+				break;
+			case MotionEvent.ACTION_POINTER_UP:
+				if (touchCount == 2) {
+					System.out.println("!!!!!!!!!!!!!!!!!");
+					startDistance = -1;
+				}
+				break;
 		}
 
 		return true;
 	}
 
+	public static Painter choiceObject(int x, int y) {
+		for (Painter painter : DrawView.painters) {
+			if (painter.isChoice(x, y))
+				return painter;
+		}
+		return null;
+	}
+
+
 	private double calcDistance(int aX, int aY, int bX, int bY) {
 		return Math.sqrt((aX - bX) * (aX - bX) +
-			(aY - bY) * (aY - bY));
+				(aY - bY) * (aY - bY));
 	}
 }

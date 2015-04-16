@@ -1,27 +1,35 @@
 package ru.barsic.avlab.graphics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
-import ru.barsic.avlab.basic.*;
-import ru.barsic.avlab.helper.*;
+import ru.barsic.avlab.basic.PhysObject;
+import ru.barsic.avlab.basic.TouchListener;
+import ru.barsic.avlab.basic.World;
+import ru.barsic.avlab.helper.Dimension;
+import ru.barsic.avlab.helper.Logging;
+import ru.barsic.avlab.helper.ScalingUtil;
 import ru.barsic.avlab.physics.IParent;
 import ru.barsic.avlab.physics.Scene;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 /**
  * Класс графического объекта. Предусмотрено автоматическое добавление объекта в
- * список отрисовки при инициализации. Является наследником MouseAdapter для
- * обработки событий мыши.
- *
- *
+ * список отрисовки при инициализации.Обработка касаний
  */
 public abstract class Painter implements View.OnTouchListener, Comparable<Painter> {
 
-
+	/**
+	 * Ссылка на отрисоваемый физический объект.
+	 */
+	public final PhysObject object;
+	/**
+	 * ZIndex, который был выдан во время инициализации объекта
+	 */
+	protected int defaultZ;
 
 	/**
 	 * Владелец объекта. Чаще всего его нет.
@@ -32,24 +40,17 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	 * Положение графического объекта на графической сцене. Не путать с
 	 * положением физического объекта на физической сцене.
 	 */
-	protected Point pos;
-
 	/**
 	 * Линейные размеры графического объекта. Координаты точки центра будут:
 	 * (pos.x + size.width / 2, pos.y + size.height / 2)
 	 */
 	protected Dimension size;
-
 	/**
 	 * Список зависящих объектов
 	 */
 	protected ArrayList<Painter> inside = new ArrayList<>();
 
-
-	/**
-	 * Ссылка на отрисоваемый физический объект.
-	 */
-	public final PhysObject object;
+	private Point pos;
 
 	/**
 	 * Центральная точка графического объекта. Может когда-то кому-то
@@ -63,11 +64,6 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	private int zIndex;
 
 	/**
-	 * ZIndex, который был выдан во время инициализации объекта
-	 */
-	protected int defaultZ;
-
-	/**
 	 * Поле, указывающее на возможность объекта перемещаться по графической
 	 * сцене.
 	 */
@@ -79,9 +75,9 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	public Painter(PhysObject obj) {
 		this.object = obj;
 		movable = true;
-		pos = new Point(ScalingUtil.scalingRealSizeX(obj.x - World.deviceX), ScalingUtil.scalingRealSizeY(obj.y - World.deviceY));
-		int width =  ScalingUtil.scalingRealSizeX(obj.width);
-		int height = ScalingUtil.scalingRealSizeY(obj.height);
+		pos = new Point(ScalingUtil.scalingRealSizeToX(obj.x - World.deviceX), ScalingUtil.scalingRealSizeToY(obj.y - World.deviceY));
+		int width = ScalingUtil.scalingRealSizeToX(obj.width);
+		int height = ScalingUtil.scalingRealSizeToY(obj.height);
 		size = new Dimension(width, height);
 		center = new Point(pos.x + width / 2, pos.y + height / 2);
 		DrawView.painters.add(this);
@@ -93,16 +89,51 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	 * @param holder владелец объекта
 	 */
 	public Painter(Painter holder) {
+		if (holder == null)
+			throw new IllegalArgumentException("Holder can not be null");
 		object = null;
 		movable = false;
 		setHolder(holder);
-		if (holder != null) {
-			pos = new Point(holder.getX(), holder.getY());
-			size = new Dimension(holder.size.width, holder.size.height);
-			center = new Point(pos.x + size.width / 2, pos.y + size.height / 2);
-		}
-		//DrawView.painters.add(this);
+		pos = new Point(holder.pos.x, holder.pos.y);
+		size = new Dimension(holder.size.width, holder.size.height);
+		center = new Point(pos.x + size.width / 2, pos.y + size.height / 2);
 	}
+
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		int x = (int) event.getX();
+		int y = (int) event.getY();
+		int z = object.getPainter().getZIndex();
+
+
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN: // нажатие
+				Logging.log("ACTION_DOWN", this, "x = " + x + ", y = " + y + ", z = " + z);
+				if (object.getParent() != null) {
+					object.getParent().detach(object);
+				}
+				break;
+			case MotionEvent.ACTION_MOVE: // движение
+				if (event.getPointerCount() == 1) {
+					System.out.println("ACTION_MOVE x = " + x + " addX =" + TouchListener.addX + " y = " + y + " addY =" + TouchListener.addY);
+					moveBy(x - TouchListener.addX, y - TouchListener.addY);
+				}
+				break;
+			case MotionEvent.ACTION_UP: // отпускание
+				Logging.log("ACTION_UP", this, "x = " + x + ", y = " + y + ", z = " + z);
+			case MotionEvent.ACTION_CANCEL:
+
+				for (IParent parent : Scene.parents) {
+					if (parent.isInAria(x, y)) {
+						((PhysObject) parent).attach(object);
+						break;
+					}
+				}
+				break;
+		}
+		return true;
+	}
+
 
 	/**
 	 * Удаление объекта и всех его частей из списка отрисуемых
@@ -132,10 +163,17 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	public void updateSize() {
 		if (object == null)
 			return;
-		setSize(ScalingUtil.scalingRealSizeX(object.width), ScalingUtil.scalingRealSizeY(object.height));
-		setPos(ScalingUtil.scalingRealSizeX(object.x  - World.deviceX), ScalingUtil.scalingRealSizeY(object.y  - World.deviceY));
-		for (Painter p : inside)
+
+		System.out.println("updateSize obj" + object);
+		System.out.println("updateSize device.x = " + World.deviceX + ", device.y = " + World.deviceY);
+
+
+		setSize(ScalingUtil.scalingRealSizeToX(object.width), ScalingUtil.scalingRealSizeToY(object.height));
+		setPos(ScalingUtil.scalingRealSizeToX(object.x - World.deviceX), ScalingUtil.scalingRealSizeToY(object.y - World.deviceY));
+		for (Painter p : inside) {
+			System.out.println("******************** p = " + p);
 			p.updateSize();
+		}
 	}
 
 	/**
@@ -173,6 +211,8 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 		center.x += dx;
 		center.y += dy;
 		changePosition(dx, dy);
+		if (object != null)
+			object.updatePos();
 		for (Painter p : inside)
 			p.moveBy(dx, dy);
 	}
@@ -186,7 +226,6 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	 *
 	 * @param holder холдер
 	 */
-	//TODO: WTF
 	public void setHolder(Painter holder) {
 		if (this.holder != null)
 			this.holder.inside.remove(this);
@@ -215,34 +254,39 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	}
 
 	public void setZIndex(int zIndex) {
-		Logging.log("setZIndex",this,"oldZ="+this.zIndex+", newZ = "+zIndex);
-//		this.zIndex = zIndex;
+		Logging.log("setZIndex", this, "oldZ=" + this.zIndex + ", newZ = " + zIndex);
 		this.zIndex = zIndex;
 
 		Collections.sort(DrawView.painters);
-
-		//for (Painter p : inside)
-		//	p.setZIndex(p.getZIndex() + delta);// или по какому другому алгоритму...
-	}
-
-	public int getX() {
-		return pos.x;
-	}
-
-	public int getY() {
-		return pos.y;
 	}
 
 	public Point getPos() {
 		return pos;
 	}
 
-	public void setPos(Point pos) {
-		moveBy(pos.x - this.pos.x, pos.y - this.pos.y);
+	public void setPos(int x, int y) {
+		pos.x = x;
+		pos.y = y;
+		updateCenter();
+		updatePoints();
+		if (object != null)
+			object.updatePos();
 	}
 
-	public void setPos(int x, int y) {
-		moveBy(x - this.pos.x, y - this.pos.y);
+	private void updateCenter() {
+		center.x = pos.x + size.width / 2;
+		center.y = pos.y + size.height / 2;
+	}
+
+	public void updatePos() {
+		if (object != null || holder != null) {
+			pos.x = ScalingUtil.scalingRealSizeToX(object.x - World.deviceX);
+			pos.y = ScalingUtil.scalingRealSizeToY(object.y - World.deviceY);
+			updateCenter();
+			updatePoints();
+			for (PhysObject obj : object.getChildren())
+				obj.getPainter().updatePos();
+		}
 	}
 
 	public Dimension getSize() {
@@ -252,8 +296,7 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	public void setSize(int width, int height) {
 		size.width = width;
 		size.height = height;
-		center.x = pos.x + size.width / 2;
-		center.y = pos.y + size.height / 2;
+		updateCenter();
 		updatePoints();
 	}
 
@@ -261,52 +304,9 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 		return center;
 	}
 
-	//todo: BUG!!!!!
-//	public void returnDefaultPosition() {
-//		setZIndex(defaultZ);
-//		moveBy(pos.x - ScalingUtil.scalingRealSizeX(object.defaultX), pos.y - ScalingUtil.scalingRealSizeY(object.defaultY));
-//	}
-
 	public void moveToDefault() {
-		pos.x = ScalingUtil.scalingRealSizeX(object.defaultX - World.deviceX);
-		pos.y = ScalingUtil.scalingRealSizeY(object.defaultY - World.deviceY);
-		updatePoints();
-	}
-
-	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		int x = (int)event.getX();
-		int y = (int)event.getY();
-		int z = object.getPainter().getZIndex();
-
-
-		switch (event.getAction()) {
-		case MotionEvent.ACTION_DOWN: // нажатие
-			Logging.log("ACTION_DOWN", this,"x = " + x + ", y = " + y +", z = " +z);
-			if (object.getParent() != null) {
-				object.getParent().detach(object);
-			}
-			break;
-		case MotionEvent.ACTION_MOVE: // движение
-			moveBy(x - TouchListener.addX, y - TouchListener.addY);
-			if (object != null) {
-				object.x = pos.x / ScalingUtil.getGlobalScaleFactor();
-				object.y = pos.y / ScalingUtil.getGlobalScaleFactor();
-			}
-			break;
-		case MotionEvent.ACTION_UP: // отпускание
-			Logging.log("ACTION_UP", this,"x = " + x + ", y = " + y +", z = " +z);
-		case MotionEvent.ACTION_CANCEL:
-
-			for (IParent parent : Scene.parents) {
-				if (parent.isInAria(x, y)) {
-					((PhysObject)parent).attach(object);
-					break;
-				}
-			}
-			break;
-		}
-		return true;
+		if (object != null)
+			object.moveToDefault();
 	}
 
 	public int compareTo(Painter other) {
