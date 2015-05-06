@@ -7,6 +7,8 @@ public class World {
 	public static final double WORLD_WIDTH = 50;
 	public static final double WORLD_HEIGHT = 20;
 	public static final double ACCELERATION_OF_GRAVITY = 9.78;
+	public static final double ATMOSPHERE_TEMPERATURE = 20;
+
 	public static final double D_T = 0.01;
 
 	//положение верхней левой точки устройства относительно мировых координат

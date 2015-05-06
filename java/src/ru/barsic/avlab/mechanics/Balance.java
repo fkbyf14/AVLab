@@ -11,10 +11,7 @@ import ru.barsic.avlab.helper.Logging;
 import ru.barsic.avlab.physics.Computation;
 import ru.barsic.avlab.physics.IParent;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Balance extends PhysObject implements IParent {
 
@@ -25,9 +22,9 @@ public class Balance extends PhysObject implements IParent {
 
 	private double leftMass = 0;
 	private double rightMass = 0;
-	private List<PhysObject> atLeft = new LinkedList<>();
+	private List<PhysObject> atLeft = new ArrayList<>();
 	// Текущие объекты на правой чаше
-	private List<PhysObject> atRight = new LinkedList<>();
+	private List<PhysObject> atRight = new ArrayList<>();
 	private double deltaMassMax;
 	private double deltaMassMin;
 

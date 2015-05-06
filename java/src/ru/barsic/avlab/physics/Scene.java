@@ -5,6 +5,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import ru.barsic.avlab.basic.PhysObject;
 import ru.barsic.avlab.graphics.Painter;
+import ru.barsic.avlab.molecular.Glass;
 
 import java.util.ArrayList;
 
@@ -12,6 +13,7 @@ public class Scene extends PhysObject {
 
 	public static ArrayList<PhysObject> objects = new ArrayList<>();
 	public static ArrayList<IParent> parents = new ArrayList<>();
+	public static ArrayList<Glass> glasses = new ArrayList<>();//todo: тут должно быть нечто, что у умеет рабоать с водой а не просто стаканы.
 
 	public Scene(double x, double y, double width, double height) {
 		super(x, y, width, height, 0);

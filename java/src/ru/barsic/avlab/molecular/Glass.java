@@ -7,16 +7,32 @@ import ru.barsic.avlab.basic.PhysObject;
 import ru.barsic.avlab.basic.TouchListener;
 import ru.barsic.avlab.graphics.Painter;
 import ru.barsic.avlab.helper.Logging;
+import ru.barsic.avlab.helper.ScalingUtil;
 import ru.barsic.avlab.mechanics.IWeighing;
 import ru.barsic.avlab.physics.Computation;
 import ru.barsic.avlab.physics.IParent;
+import ru.barsic.avlab.physics.Scene;
 
-import java.util.TimerTask;
+public class Glass extends PhysObject implements IWeighing, IParent, VolumeFunction {
 
-public class Glass extends PhysObject implements IWeighing, IParent{
+	private final WaterChangeListener INSTANCE_LISTENER = new GlassWaterListener();
+
+	private Water water;
+	private double waterLevel;
+
+
 	public Glass(double x, double y, double width, double height, double mass) {
+		this(x, y, width, height, mass, 0);
+	}
+
+	public Glass(double x, double y, double width, double height, double mass, double waterVolume) {
 		super(x, y, width, height, mass);
 		painter = new GlassPainter(this);
+		if (waterVolume > 0) {
+			water = new Water(waterVolume);
+			water.addChangeListener(INSTANCE_LISTENER);
+		}
+		Scene.glasses.add(this);
 	}
 
 	@Override
@@ -61,13 +77,37 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 
 		return true;
 	}
+	void calcWaterLever(double volumeWater, int radBottom, int radUp){
+		double q = - 3*volumeWater/Math.PI/Math.tan((radUp - radBottom)/height)/Math.tan((radUp - radBottom)/height);
+		double p = - radBottom*radBottom/Math.tan((radUp - radBottom)/height)/Math.tan((radUp - radBottom)/height);
+		double d = q*q + 4*p*p*p/27;
+		waterLevel = Math.pow((-q + Math.sqrt(d))/2, 1/3) - p/3/ Math.pow((-q + Math.sqrt(d))/2, 1/3) - radBottom/Math.tan((radUp - radBottom)/height);
+	}
+
+	public double getWaterLevel() {
+		return waterLevel;
+	}
+
+	public Water getWater() {
+		return water;
+	}
+
+	@Override
+	public double volumeFunction(double height) {
+		double radBottomSm = ScalingUtil.scalingXToRealSize(((GlassPainter) painter).radBottom);
+		double radUpSm = ScalingUtil.scalingXToRealSize(((GlassPainter) painter).radUp);
+		double volumeGlass = Math.PI*height*(radBottomSm*radBottomSm + radBottomSm*radUpSm + radUpSm*radUpSm)/3;
+		return 0;
+	}
 
 	private class GlassPainter extends Painter {
 		private  int xArray[];
 		private  int yArray[];
 		private  int levelXLeft;
 		private  int levelXRight;
-		private  int levelY;
+		private  int waterLever;
+		private  int radBottom;
+		private  int radUp;
 
 
 		public GlassPainter(PhysObject obj) {
@@ -79,16 +119,24 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 			setZIndex(10);
 		}
 
+		public void updateSize() {
+			super.updateSize();
+			updateWaterLevel();
+		}
+
+		private void updateWaterLevel() {
+			waterLevel = ScalingUtil.scalingRealSizeToY(Glass.this.waterLevel);
+		}
+
 		@Override
 		public void updatePoints() {
 			xArray = new int[]{getPos().x, getPos().x + size.width, getPos().x + size.width - size.width / 4, getPos().x + size.width / 4};
 			yArray = new int[]{getPos().y, getPos().y, getPos().y + size.height, getPos().y + size.height};
-			levelY = yArray[0] + getSize().height / 2;
-//			levelXLeft = xArray[0] + ((levelY - yArray[0])*(xArray[3] - xArray[0]))/(yArray[3] - yArray[0]);
-//			levelXRight = xArray[0] + ((levelY - yArray[1])*(xArray[1] - xArray[2]))/(yArray[2] - yArray[1]);
-			levelXLeft = (xArray[3]*yArray[0] - xArray[0]*yArray[3] - levelY*(xArray[3] - xArray[0]))/(yArray[0] - yArray[3]);
-			levelXRight = (xArray[2]*yArray[1] - xArray[1]*yArray[2] - levelY*(xArray[2] - xArray[1]))/(yArray[1] - yArray[2]);
-
+			waterLever = yArray[0] + getSize().height / 2;
+			levelXLeft = (xArray[3]*yArray[0] - xArray[0]*yArray[3] - waterLever *(xArray[3] - xArray[0]))/(yArray[0] - yArray[3]);
+			levelXRight = (xArray[2]*yArray[1] - xArray[1]*yArray[2] - waterLever *(xArray[2] - xArray[1]))/(yArray[1] - yArray[2]);
+			radBottom = (xArray[2] - xArray[3])/2;
+			radUp = size.width / 2;
 		}
 
 		@Override
@@ -97,7 +145,7 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 				xArray[i] += dx;
 				yArray[i] += dy;
 			}
-			levelY += dy;
+			waterLever += dy;
 			levelXRight += dx;
 			levelXLeft += dx;
 		}
@@ -107,15 +155,15 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 
 			Path path = new Path();
 			Paint paint = new Paint();
-			RectF middle = new RectF(levelXLeft, levelY - size.height / 40, levelXRight, levelY + size.height / 40);
-			path.moveTo(levelXRight, levelY);
+			RectF waterRect = new RectF(levelXLeft, waterLever - size.height / 40, levelXRight, waterLever + size.height / 40);
+			path.moveTo(levelXRight, waterLever);
 			path.lineTo(xArray[2], yArray[2]);
 			path.lineTo(xArray[3], yArray[3]);
-			path.lineTo(levelXLeft, levelY);
+			path.lineTo(levelXLeft, waterLever);
 			paint.setColor(Color.argb(127, 199, 252, 236));
 			paint.setStyle(Paint.Style.FILL);
 
-			canvas.drawOval(middle, paint);
+			canvas.drawOval(waterRect, paint);
 			canvas.drawPath(path, paint);
 			RectF basis = new RectF(xArray[3], yArray[3] - size.height / 50, xArray[2], yArray[3] + size.height / 50);
 			canvas.drawOval(basis, paint);
@@ -130,12 +178,12 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 			paint.setColor(Color.BLACK);
 			canvas.drawPath(path, paint);
 			canvas.drawArc(up, 0, -180, false, paint);
-			canvas.drawArc(middle, 0, -180, false, paint);
+			canvas.drawArc(waterRect, 0, -180, false, paint);
 			canvas.drawArc(basis, 0, -180, false, paint);
 			if (!getChildren().isEmpty())
 				getChildren().get(0).getPainter().onDraw(canvas);
 			canvas.drawArc(up, 0, 180, false, paint);
-			canvas.drawArc(middle, 0, 180, false, paint);
+			canvas.drawArc(waterRect, 0, 180, false, paint);
 			canvas.drawArc(basis, 0, 180, false, paint);
 		}
 
@@ -149,16 +197,17 @@ public class Glass extends PhysObject implements IWeighing, IParent{
 			return true;
 		}
 	}
-	private class CalculationTask extends TimerTask {
-		private final GlassPainter painter;
 
-		public CalculationTask() {
-		this.painter = (GlassPainter) getPainter();
-		}
-
+	private class GlassWaterListener implements WaterChangeListener {
+		private double oldLevel;
 		@Override
-		public void run() {
-			//getChildren().
+		public void change(Water water) {
+			double waterLevel = getWaterLevel();
+			if (oldLevel != waterLevel) {
+				((GlassPainter)getPainter()).updateWaterLevel();
+				oldLevel = waterLevel;
+				painter.updateSize();
+			}
 		}
 	}
 }

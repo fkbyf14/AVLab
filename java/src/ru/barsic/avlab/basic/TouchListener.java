@@ -52,8 +52,6 @@ public class TouchListener implements View.OnTouchListener {
 					}
 					if (!selected.isMovable())
 						selected = h;
-//            selected.setZIndex(GraphScene.maxZIndex);
-//            GraphScene.sortByZ();
 					selected.onTouch(view, event);
 				}
 				break;

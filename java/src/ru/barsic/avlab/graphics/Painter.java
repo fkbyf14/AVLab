@@ -48,7 +48,7 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 	/**
 	 * Список зависящих объектов
 	 */
-	protected ArrayList<Painter> inside = new ArrayList<>();
+	protected ArrayList<Painter> inside = new ArrayList();
 
 	private Point pos;
 
@@ -104,8 +104,6 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 		int x = (int) event.getX();
 		int y = (int) event.getY();
 		int z = object.getPainter().getZIndex();
-
-
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN: // нажатие
 				Logging.log("ACTION_DOWN", this, "x = " + x + ", y = " + y + ", z = " + z);
@@ -133,7 +131,6 @@ public abstract class Painter implements View.OnTouchListener, Comparable<Painte
 		}
 		return true;
 	}
-
 
 	/**
 	 * Удаление объекта и всех его частей из списка отрисуемых

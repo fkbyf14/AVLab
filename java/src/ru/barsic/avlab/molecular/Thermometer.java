@@ -4,15 +4,21 @@ import android.graphics.*;
 import android.view.MotionEvent;
 import android.view.View;
 import ru.barsic.avlab.basic.PhysObject;
+import ru.barsic.avlab.basic.World;
 import ru.barsic.avlab.graphics.Painter;
 import ru.barsic.avlab.graphics.Scale;
+import ru.barsic.avlab.physics.Computation;
 import ru.barsic.avlab.physics.IGluer;
+import ru.barsic.avlab.physics.Scene;
 
-public class Thermometer extends PhysObject implements IGluer, IMeasuring {
-	private final static double TEMPERATURE = 20;
+public class Thermometer extends PhysObject implements IGluer, IMeasuring, VolumeFunction {
+	private final WaterTemperatureChangeListener listenerInstance = new WaterTemperatureChangeListener();
+	private double temperature = World.ATMOSPHERE_TEMPERATURE;
 	private double maxT = 100;
 	private double minT = 0;
 	private double step = (maxT - minT) / 100;
+	private volatile boolean inWater;
+	private double immersedVolume;
 
 	public Thermometer(double x, double y, double width, double height, double mass) {
 		super(x, y, width, height, mass);
@@ -27,6 +33,12 @@ public class Thermometer extends PhysObject implements IGluer, IMeasuring {
 	@Override
 	public int[][] getMeasuringPolygon() {
 		return new int[][]{((ThermometerPathPainter) painter).xArray, ((ThermometerPathPainter) painter).yArray};
+	}
+
+	@Override
+	public double volumeFunction(double height) {
+		//todo: объем градусника в зависимости от высоты (высота 0 соответствует самой нижней точке)
+		return 0;
 	}
 
 	private class ThermometerPathPainter extends Painter {
@@ -125,14 +137,50 @@ public class Thermometer extends PhysObject implements IGluer, IMeasuring {
 				if (getParent() == null)
 					moveToDefault();
 			}
+			if (event.getAction() == MotionEvent.ACTION_MOVE) {
+				Glass glass = null;
+				for (Glass g : Scene.glasses) {
+					if (Computation.intersect(getMeasuringPolygon(), g.getActivePolygon()))
+						glass = g;
+
+					if (glass != null)
+						break;
+				}
+				if (glass == null) {
+					inWater = false;
+					return true;
+				}
+				boolean inWaterOld = inWater;
+				inWater = object.y + object.height > glass.getWaterLevel();
+				if (inWaterOld != inWater) {
+					if (inWater)
+						glass.getWater().addChangeListener(listenerInstance);
+					else
+						glass.getWater().removeChangeListener(listenerInstance);
+				}
+				if (!inWater)
+					return true;
+				immersedVolume = glass.getWater().getDivingDepth(glass.getWaterLevel(), object.y + object.height,
+						immersedVolume, Thermometer.this, glass);
+			}
 			return true;
 		}
 
 		private int calcHeightHg() {
 			int y1 = lineScale.getPos().y;
 			int y2 = lineScale.getPos().y + lineScale.getSize().height;
-			return (int) ((y1 * (TEMPERATURE - minT) + y2 * (maxT - TEMPERATURE)) /
+			return (int) ((y1 * (temperature - minT) + y2 * (maxT - temperature)) /
 					(maxT - minT));
+		}
+	}
+
+	private class WaterTemperatureChangeListener implements WaterChangeListener {
+		@Override
+		public void change(Water water) {
+			if (water.getTemperature() == temperature)
+				return;
+
+			//todo тут надо создать задачу, которая постепенно меняет температуру на термометре, пока она не станет равной температуре воды
 		}
 	}
 }
